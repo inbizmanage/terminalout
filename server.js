@@ -1134,6 +1134,90 @@ function injectHTML(rawHtml) {
           text-align: center;
           padding: 20px;
       }
+
+      /* Media Viewer Modal Styles */
+      .media-modal {
+          display: none;
+          position: fixed;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background: rgba(15, 23, 42, 0.95);
+          z-index: 1000000;
+          align-items: center;
+          justify-content: center;
+          padding: 20px;
+      }
+      .media-modal.active {
+          display: flex;
+      }
+      .media-modal-content {
+          background: #1e293b;
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          border-radius: 16px;
+          width: 100%;
+          max-width: 450px;
+          display: flex;
+          flex-direction: column;
+          overflow: hidden;
+          box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+      }
+      .media-modal-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 12px 16px;
+          background: rgba(15, 23, 42, 0.6);
+          border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      }
+      #media-modal-title {
+          color: #fff;
+          font-size: 14px;
+          font-weight: 600;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          max-width: 320px;
+      }
+      .media-close-btn {
+          background: none;
+          border: none;
+          color: #94a3b8;
+          font-size: 18px;
+          cursor: pointer;
+          padding: 4px;
+          line-height: 1;
+      }
+      .media-close-btn:hover {
+          color: #fff;
+      }
+      .media-modal-body {
+          padding: 16px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          min-height: 200px;
+          max-height: 70vh;
+          overflow: auto;
+      }
+      .media-modal-body img {
+          max-width: 100%;
+          max-height: 60vh;
+          object-fit: contain;
+          border-radius: 8px;
+          box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+      }
+      .media-modal-body video {
+          width: 100%;
+          max-height: 60vh;
+          border-radius: 8px;
+          outline: none;
+      }
+      .media-modal-body audio {
+          width: 100%;
+          outline: none;
+      }
     </style>`;
 
     const pwaBody = `
@@ -1253,6 +1337,17 @@ function injectHTML(rawHtml) {
       <div class="nav-home-btn" id="nav-home-btn"></div>
     </div>
 
+    <!-- Media Viewer Modal -->
+    <div id="media-viewer-modal" class="media-modal">
+      <div class="media-modal-content">
+        <div class="media-modal-header">
+          <span id="media-modal-title">Archivo</span>
+          <button class="media-close-btn" id="btn-close-media">✕</button>
+        </div>
+        <div class="media-modal-body" id="media-modal-body"></div>
+      </div>
+    </div>
+
     <div id="mobile-keyboard-bar">
       <div class="terminal-key-btn special-btn" id="btn-ctrlc2">Ctrl+C x2</div>
       <div class="terminal-key-btn special-btn" id="btn-paste">📋 Pegar</div>
@@ -1292,16 +1387,42 @@ function injectHTML(rawHtml) {
                 const bar = document.getElementById('mobile-keyboard-bar');
                 if (!bar || !bar.classList.contains('active')) return;
                 
-                // Calcular diferencia entre la altura de ventana interna y el viewport visible
-                const keyboardHeight = window.innerHeight - window.visualViewport.height;
-                // Si el teclado está abierto, lo situamos arriba del teclado, de lo contrario bottom: 0
-                bar.style.bottom = Math.max(0, keyboardHeight) + 'px';
+                const viewport = window.visualViewport;
+                bar.style.position = 'absolute';
+                bar.style.top = (viewport.offsetTop + viewport.height - bar.offsetHeight) + 'px';
+                bar.style.bottom = 'auto';
+                bar.style.left = viewport.offsetLeft + 'px';
+                bar.style.width = viewport.width + 'px';
                 
-                // Desplazar viewport para mantener la visibilidad si es necesario
+                // Ajustar el contenedor de la terminal si está activa
+                const isTerminal = document.body.classList.contains('show-terminal');
+                if (isTerminal) {
+                    const termContainer = Array.from(document.body.children).find(el => {
+                        return el.tagName === 'DIV' && 
+                               el.id !== 'app-header' && 
+                               el.id !== 'app-nav-bar' && 
+                               el.id !== 'mobile-keyboard-bar' && 
+                               el.id !== 'pwa-install-btn' && 
+                               el.id !== 'media-viewer-modal' &&
+                               !el.classList.contains('app-screen');
+                    });
+                    if (termContainer) {
+                        termContainer.style.position = 'absolute';
+                        termContainer.style.top = (viewport.offsetTop + 50) + 'px';
+                        termContainer.style.height = (viewport.height - 105) + 'px';
+                        termContainer.style.left = viewport.offsetLeft + 'px';
+                        termContainer.style.width = viewport.width + 'px';
+                    }
+                }
+                
                 window.scrollTo(0, 0);
             };
             window.visualViewport.addEventListener('resize', adjustBarPosition);
             window.visualViewport.addEventListener('scroll', adjustBarPosition);
+            // Ejecutar al abrir terminal para inicializar
+            document.getElementById('app-terminal-btn').addEventListener('click', () => {
+                setTimeout(adjustBarPosition, 150);
+            });
         }
 
         let deferredPrompt = null;
@@ -1550,7 +1671,14 @@ function injectHTML(rawHtml) {
                         if (file.isDir) {
                             loadDirectory(currentDirectory + '/' + file.name);
                         } else {
-                            window.open('/api/files/view?path=' + encodeURIComponent(currentDirectory + '/' + file.name));
+                            const nameLower = file.name.toLowerCase();
+                            const ext = nameLower.substring(nameLower.lastIndexOf('.'));
+                            const mediaExts = ['.png', '.jpg', '.jpeg', '.gif', '.webp', '.mp4', '.webm', '.mp3', '.wav', '.ogg'];
+                            if (mediaExts.includes(ext)) {
+                                openMediaModal(file.name, currentDirectory + '/' + file.name, ext);
+                            } else {
+                                window.open('/api/files/view?path=' + encodeURIComponent(currentDirectory + '/' + file.name));
+                            }
                         }
                     });
                     container.appendChild(item);
@@ -1568,6 +1696,51 @@ function injectHTML(rawHtml) {
             const i = Math.floor(Math.log(bytes) / Math.log(k));
             return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
         }
+
+        function openMediaModal(name, filePath, ext) {
+            const modal = document.getElementById('media-viewer-modal');
+            const title = document.getElementById('media-modal-title');
+            const body = document.getElementById('media-modal-body');
+            
+            title.textContent = name;
+            body.innerHTML = '';
+            
+            const fileUrl = '/api/files/view?stream=true&path=' + encodeURIComponent(filePath);
+            
+            if (['.png', '.jpg', '.jpeg', '.gif', '.webp'].includes(ext)) {
+                const img = document.createElement('img');
+                img.src = fileUrl;
+                body.appendChild(img);
+            } else if (['.mp4', '.webm', '.ogg'].includes(ext)) {
+                const video = document.createElement('video');
+                video.src = fileUrl;
+                video.controls = true;
+                video.autoplay = true;
+                body.appendChild(video);
+            } else if (['.mp3', '.wav'].includes(ext)) {
+                const audio = document.createElement('audio');
+                audio.src = fileUrl;
+                audio.controls = true;
+                audio.autoplay = true;
+                body.appendChild(audio);
+            }
+            
+            modal.classList.add('active');
+        }
+        
+        document.getElementById('btn-close-media').addEventListener('click', () => {
+            const modal = document.getElementById('media-viewer-modal');
+            const body = document.getElementById('media-modal-body');
+            body.innerHTML = '';
+            modal.classList.remove('active');
+        });
+        
+        document.getElementById('media-viewer-modal').addEventListener('click', (e) => {
+            if (e.target === document.getElementById('media-viewer-modal')) {
+                document.getElementById('btn-close-media').click();
+            }
+            e.stopPropagation();
+        });
 
         // --- Lógica del Monitor del Sistema ---
         async function loadProcesses() {
@@ -1789,7 +1962,7 @@ function injectHTML(rawHtml) {
         updateClock();
 
         // --- Detener propagación de clics y toques para evitar problemas con ttyd/xterm ---
-        const customElements = ['app-header', 'app-nav-bar', 'home-screen', 'files-app', 'monitor-app', 'browser-app'];
+        const customElements = ['app-header', 'app-nav-bar', 'home-screen', 'files-app', 'monitor-app', 'browser-app', 'media-viewer-modal'];
         customElements.forEach(id => {
             const el = document.getElementById(id);
             if (el) {
@@ -2088,11 +2261,37 @@ function handleRequest(req, res) {
             return;
         }
         const stat = fs.statSync(filePath);
-        res.writeHead(200, {
-            'Content-Type': 'application/octet-stream',
-            'Content-Length': stat.size,
-            'Content-Disposition': `attachment; filename="${encodeURIComponent(path.basename(filePath))}"`
-        });
+        const ext = path.extname(filePath).toLowerCase();
+        
+        let contentType = 'application/octet-stream';
+        let isStream = reqUrl.query.stream === 'true';
+        
+        if (isStream) {
+            const mimeTypes = {
+                '.png': 'image/png',
+                '.jpg': 'image/jpeg',
+                '.jpeg': 'image/jpeg',
+                '.gif': 'image/gif',
+                '.webp': 'image/webp',
+                '.mp4': 'video/mp4',
+                '.webm': 'video/webm',
+                '.mp3': 'audio/mpeg',
+                '.wav': 'audio/wav',
+                '.ogg': 'audio/ogg'
+            };
+            contentType = mimeTypes[ext] || 'application/octet-stream';
+        }
+        
+        const headers = {
+            'Content-Type': contentType,
+            'Content-Length': stat.size
+        };
+        
+        if (!isStream) {
+            headers['Content-Disposition'] = `attachment; filename="${encodeURIComponent(path.basename(filePath))}"`;
+        }
+        
+        res.writeHead(200, headers);
         fs.createReadStream(filePath).pipe(res);
         return;
     }

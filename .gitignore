@@ -4,3 +4,4 @@ ssl/
 *.log
 *.pid
 node_modules/
+brave-profile/
