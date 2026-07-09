@@ -776,46 +776,21 @@ function injectHTML(rawHtml) {
           color: #fff;
           font-size: 16px;
       }
-      .header-tabs {
-          display: flex;
-          gap: 4px;
-          background: rgba(2, 6, 23, 0.5);
-          padding: 4px;
-          border-radius: 8px;
-          border: 1px solid rgba(255, 255, 255, 0.08);
-      }
-      .tab-btn {
-          padding: 6px 12px;
-          font-size: 12px;
-          font-weight: 700;
-          color: #94a3b8;
-          border-radius: 6px;
-          cursor: pointer;
-          transition: all 0.2s;
-          user-select: none;
-          -webkit-user-select: none;
+      .header-status {
           font-family: 'JetBrains Mono', monospace;
-      }
-      .tab-btn.active {
-          background: #0ea5e9;
-          color: #fff;
-      }
-      
-      /* Shift the main ttyd content down to not overlap with the header */
-      body > div:not(#app-header):not(#dashboard-container):not(#mobile-keyboard-bar) {
-          margin-top: 50px !important;
-          height: calc(100vh - 50px) !important;
-          box-sizing: border-box;
+          font-size: 13px;
+          font-weight: 600;
+          color: #38bdf8;
       }
       
-      /* Dashboard container */
-      #dashboard-container {
+      /* Main App Layout */
+      .app-screen {
           display: none;
           position: fixed;
           top: 50px;
+          bottom: 55px;
           left: 0;
           right: 0;
-          bottom: 0;
           background: #020617;
           overflow-y: auto;
           padding: 20px 16px;
@@ -824,14 +799,196 @@ function injectHTML(rawHtml) {
           color: #f8fafc;
           font-family: system-ui, -apple-system, sans-serif;
       }
-      body.show-dashboard #dashboard-container {
+      .app-screen.active {
           display: block;
       }
-      body.show-dashboard > div:not(#app-header):not(#dashboard-container):not(#mobile-keyboard-bar) {
+      
+      /* Navigation Bar at Bottom */
+      #app-nav-bar {
+          position: fixed;
+          bottom: 0;
+          left: 0;
+          right: 0;
+          height: 55px;
+          background: rgba(15, 23, 42, 0.95);
+          backdrop-filter: blur(12px);
+          border-top: 1px solid rgba(255, 255, 255, 0.08);
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          z-index: 100000;
+          box-sizing: border-box;
+      }
+      .nav-home-btn {
+          width: 50px;
+          height: 8px;
+          background: rgba(255, 255, 255, 0.3);
+          border-radius: 4px;
+          cursor: pointer;
+          transition: background 0.2s, transform 0.2s;
+      }
+      .nav-home-btn:active {
+          background: rgba(255, 255, 255, 0.6);
+          transform: scale(0.95);
+      }
+
+      /* Home Screen Grid */
+      .home-grid {
+          display: grid;
+          grid-template-columns: repeat(4, 1fr);
+          gap: 16px;
+          padding-top: 20px;
+      }
+      .app-icon-wrap {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          cursor: pointer;
+      }
+      .app-icon {
+          width: 60px;
+          height: 60px;
+          border-radius: 16px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 28px;
+          box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+          transition: transform 0.2s;
+      }
+      .app-icon-wrap:active .app-icon {
+          transform: scale(0.9);
+      }
+      .terminal-icon { background: linear-gradient(135deg, #1e293b, #0f172a); border: 1px solid rgba(255,255,255,0.1); }
+      .files-icon { background: linear-gradient(135deg, #eab308, #ca8a04); }
+      .monitor-icon { background: linear-gradient(135deg, #0ea5e9, #0284c7); }
+      .gallery-icon { background: linear-gradient(135deg, #ec4899, #db2777); }
+      
+      .app-name {
+          margin-top: 8px;
+          font-size: 11px;
+          font-weight: 500;
+          color: #e2e8f0;
+          text-align: center;
+      }
+
+      /* App Toolbars */
+      .app-toolbar {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          margin-bottom: 16px;
+          font-weight: 700;
+          font-size: 15px;
+          border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+          padding-bottom: 10px;
+      }
+      .tool-btn {
+          background: rgba(255, 255, 255, 0.08);
+          border: 1px solid rgba(255, 255, 255, 0.12);
+          color: #fff;
+          padding: 6px 12px;
+          border-radius: 8px;
+          font-size: 12px;
+          cursor: pointer;
+      }
+      .tool-btn:active {
+          background: rgba(255, 255, 255, 0.18);
+      }
+      .current-path {
+          font-family: 'JetBrains Mono', monospace;
+          font-size: 12px;
+          color: #94a3b8;
+          word-break: break-all;
+      }
+
+      /* Files List */
+      .files-list {
+          display: flex;
+          flex-direction: column;
+          gap: 2px;
+      }
+      .file-item {
+          display: flex;
+          align-items: center;
+          padding: 12px;
+          background: rgba(255, 255, 255, 0.03);
+          border-radius: 8px;
+          cursor: pointer;
+          transition: background 0.15s;
+      }
+      .file-item:active {
+          background: rgba(255, 255, 255, 0.08);
+      }
+      .file-icon {
+          font-size: 20px;
+          margin-right: 12px;
+      }
+      .file-name {
+          flex: 1;
+          font-size: 14px;
+          color: #e2e8f0;
+          word-break: break-all;
+      }
+      .file-size {
+          font-size: 11px;
+          color: #64748b;
+          font-family: 'JetBrains Mono', monospace;
+      }
+
+      /* Process Table */
+      .process-table-container {
+          overflow-x: auto;
+          margin-top: 10px;
+          border: 1px solid rgba(255, 255, 255, 0.05);
+          border-radius: 10px;
+      }
+      .process-table {
+          width: 100%;
+          border-collapse: collapse;
+          font-family: 'JetBrains Mono', monospace;
+          font-size: 11px;
+          text-align: left;
+      }
+      .process-table th, .process-table td {
+          padding: 10px 8px;
+          border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      }
+      .process-table th {
+          background: rgba(255, 255, 255, 0.03);
+          color: #94a3b8;
+          font-weight: 700;
+      }
+      .process-table td {
+          color: #e2e8f0;
+      }
+      .kill-btn {
+          background: rgba(239, 68, 68, 0.15);
+          border: 1px solid rgba(239, 68, 68, 0.35);
+          color: #ef4444;
+          padding: 3px 8px;
+          border-radius: 4px;
+          cursor: pointer;
+          font-weight: bold;
+      }
+      .kill-btn:active {
+          background: rgba(239, 68, 68, 0.35);
+      }
+
+      /* Terminal View Specific CSS */
+      body.show-terminal > div:not(#app-header):not(#app-nav-bar):not(#mobile-keyboard-bar):not(#pwa-install-btn):not(.app-screen):not(script) {
+          margin-top: 50px !important;
+          height: calc(100vh - 105px) !important;
+          box-sizing: border-box;
+      }
+      body:not(.show-terminal) > div:not(#app-header):not(#app-nav-bar):not(#mobile-keyboard-bar):not(#pwa-install-btn):not(.app-screen):not(script) {
           display: none !important;
       }
-      body.show-dashboard #mobile-keyboard-bar {
-          display: none !important;
+      body.show-terminal #mobile-keyboard-bar {
+          bottom: 55px !important;
+      }
+      body.show-terminal.mobile-bar-active > div:not(#app-header):not(#app-nav-bar):not(#mobile-keyboard-bar):not(#pwa-install-btn):not(.app-screen):not(script) {
+          height: calc(100vh - 155px) !important;
       }
 
       /* Dashboard Cards & Layout */
@@ -893,92 +1050,60 @@ function injectHTML(rawHtml) {
           align-self: flex-end;
           font-size: 20px;
       }
-      .section-title {
-          font-size: 13px;
-          font-weight: 700;
-          color: #94a3b8;
-          margin: 20px 0 10px 0;
-          text-transform: uppercase;
-          letter-spacing: 0.08em;
-          border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-          padding-bottom: 6px;
-      }
-      .actions-grid {
-          display: grid;
-          grid-template-columns: repeat(2, 1fr);
-          gap: 10px;
-          margin-bottom: 20px;
-      }
-      .action-btn {
-          background: rgba(14, 165, 233, 0.08);
-          border: 1px solid rgba(14, 165, 233, 0.25);
-          color: #38bdf8;
-          padding: 14px 10px;
-          border-radius: 10px;
-          font-size: 13px;
-          font-weight: 600;
-          cursor: pointer;
-          transition: all 0.2s;
-          text-align: center;
-          display: block;
-          width: 100%;
-          box-sizing: border-box;
-      }
-      .action-btn:active {
-          background: rgba(14, 165, 233, 0.2);
-          transform: scale(0.96);
-      }
-      .custom-command-box {
-          display: flex;
-          gap: 8px;
-          margin-bottom: 30px;
-      }
-      .custom-command-box input {
-          flex: 1;
-          background: rgba(15, 23, 42, 0.8);
-          border: 1px solid rgba(255, 255, 255, 0.1);
-          padding: 12px;
-          border-radius: 10px;
-          color: #fff;
-          font-family: 'JetBrains Mono', monospace;
-          font-size: 14px;
-      }
-      .custom-command-box input:focus {
-          outline: none;
-          border-color: #0ea5e9;
-          box-shadow: 0 0 0 2px rgba(14, 165, 233, 0.2);
-      }
-      .custom-command-box button {
-          background: #0ea5e9;
-          color: #fff;
-          border: none;
-          padding: 0 18px;
-          border-radius: 10px;
-          font-size: 14px;
-          font-weight: 700;
-          cursor: pointer;
-          transition: all 0.2s;
-      }
-      .custom-command-box button:active {
-          background: #0284c7;
-          transform: scale(0.95);
-      }
     </style>`;
 
     const pwaBody = `
     <div id="app-header">
       <div class="header-logo">
         <span class="logo-dot"></span>
-        <span class="logo-title">terminalout</span>
+        <span class="logo-title" id="header-app-title">LinuxMobile</span>
       </div>
-      <div class="header-tabs">
-        <div class="tab-btn active" id="tab-terminal">Terminal</div>
-        <div class="tab-btn" id="tab-dashboard">Dashboard</div>
+      <div class="header-status">
+        <span id="header-time">00:00</span>
       </div>
     </div>
+    
     <button id="pwa-install-btn">📥 Instalar App</button>
-    <div id="dashboard-container">
-      <!-- Metrics Grid -->
+
+    <!-- Home Screen -->
+    <div id="home-screen" class="app-screen active">
+      <div class="home-grid">
+        <div class="app-icon-wrap" id="app-terminal-btn">
+          <div class="app-icon terminal-icon">📟</div>
+          <div class="app-name">Terminal</div>
+        </div>
+        <div class="app-icon-wrap" id="app-files-btn">
+          <div class="app-icon files-icon">📁</div>
+          <div class="app-name">Archivos</div>
+        </div>
+        <div class="app-icon-wrap" id="app-monitor-btn">
+          <div class="app-icon monitor-icon">📊</div>
+          <div class="app-name">Monitor</div>
+        </div>
+        <div class="app-icon-wrap" id="app-gallery-btn">
+          <div class="app-icon gallery-icon">🖼️</div>
+          <div class="app-name">Capturas</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Files App -->
+    <div id="files-app" class="app-screen">
+      <div class="app-toolbar">
+        <button class="tool-btn" id="files-back-btn">⬅️ Atrás</button>
+        <span class="current-path" id="files-path">/home/dxdx</span>
+      </div>
+      <div class="files-list" id="files-list-container">
+        <!-- cargado dinámicamente -->
+      </div>
+    </div>
+
+    <!-- Monitor App -->
+    <div id="monitor-app" class="app-screen">
+      <div class="app-toolbar">
+        <button class="tool-btn" id="monitor-back-btn">⬅️ Atrás</button>
+        <span>Monitor de Sistema</span>
+      </div>
       <div class="dash-grid">
         <div class="dash-card">
           <div class="card-title">CPU</div>
@@ -1001,30 +1126,50 @@ function injectHTML(rawHtml) {
           <div class="temp-icon">🔥</div>
         </div>
       </div>
-      
       <div class="dash-card single-card">
         <div class="card-title">Uptime</div>
         <div class="card-value-large" id="stat-uptime">--:--:--</div>
       </div>
-
-      <!-- Quick Actions -->
-      <h3 class="section-title">Comandos Rápidos</h3>
-      <div class="actions-grid">
-        <button class="action-btn" id="act-ls">📂 Listar Archivos (ls)</button>
-        <button class="action-btn" id="act-top">📊 Monitorear (top)</button>
-        <button class="action-btn" id="act-neofetch">💻 Info Sistema (neofetch)</button>
-        <button class="action-btn" id="act-df">💾 Espacio en Disco (df)</button>
-        <button class="action-btn" id="act-ip">🌐 Interfaces IP (ip a)</button>
-        <button class="action-btn" id="act-clear">🧹 Limpiar Consola</button>
-      </div>
-
-      <!-- Custom Command -->
-      <h3 class="section-title">Ejecutar Comando</h3>
-      <div class="custom-command-box">
-        <input type="text" id="cmd-input" placeholder="Escribe un comando... (e.g. ping -c 3 1.1.1.1)" />
-        <button id="btn-run-cmd">Enviar</button>
+      <h3 class="section-title" style="font-size:13px;color:#94a3b8;margin:15px 0 8px 0;text-transform:uppercase;border-bottom:1px solid rgba(255,255,255,0.05);padding-bottom:4px;">Procesos Activos</h3>
+      <div class="process-table-container">
+        <table class="process-table">
+          <thead>
+            <tr>
+              <th>PID</th>
+              <th>CPU%</th>
+              <th>MEM%</th>
+              <th>Comando</th>
+              <th>Acción</th>
+            </tr>
+          </thead>
+          <tbody id="process-list-body">
+            <!-- cargado dinámicamente -->
+          </tbody>
+        </table>
       </div>
     </div>
+
+    <!-- Gallery App -->
+    <div id="gallery-app" class="app-screen">
+      <div class="app-toolbar">
+        <button class="tool-btn" id="gallery-back-btn">⬅️ Atrás</button>
+        <span>Capturas del Servidor</span>
+      </div>
+      <div style="background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.05);border-radius:12px;padding:16px;text-align:center;">
+        <h4 style="margin:0 0 12px 0;font-size:14px;color:#94a3b8;">Última Captura Reciente:</h4>
+        <div style="background:rgba(0,0,0,0.2);border-radius:8px;padding:8px;min-height:150px;display:flex;align-items:center;justify-content:center;">
+          <img id="gallery-img-preview" src="" alt="Vista previa" style="max-width:100%;max-height:350px;display:none;border-radius:6px;box-shadow:0 4px 12px rgba(0,0,0,0.5);" />
+          <div id="gallery-no-img" style="color:#64748b;font-size:12px;">Cargando captura...</div>
+        </div>
+        <button class="action-btn" id="btn-refresh-gallery" style="background:rgba(14,165,233,0.15);border:1px solid rgba(14,165,233,0.3);color:#38bdf8;padding:8px 16px;border-radius:8px;font-size:12px;margin-top:12px;cursor:pointer;">🔄 Actualizar</button>
+      </div>
+    </div>
+
+    <!-- Bottom Navigation Bar (Home Button) -->
+    <div id="app-nav-bar">
+      <div class="nav-home-btn" id="nav-home-btn"></div>
+    </div>
+
     <div id="mobile-keyboard-bar">
       <div class="terminal-key-btn special-btn" id="btn-ctrlc2">Ctrl+C x2</div>
       <div class="terminal-key-btn special-btn" id="btn-paste">📋 Pegar</div>
@@ -1236,87 +1381,226 @@ function injectHTML(rawHtml) {
             }
         });
 
-        // --- Lógica del Dashboard y Navegación ---
-        const tabTerminal = document.getElementById('tab-terminal');
-        const tabDashboard = document.getElementById('tab-dashboard');
+        // --- Lógica de LinuxMobile OS ---
+        const screens = ['home-screen', 'files-app', 'monitor-app', 'gallery-app'];
         
-        function showTab(tabName) {
-            if (tabName === 'terminal') {
-                tabTerminal.classList.add('active');
-                tabDashboard.classList.remove('active');
-                document.body.classList.remove('show-dashboard');
-                setTimeout(() => {
-                    window.dispatchEvent(new Event('resize'));
-                }, 100);
+        function openApp(appName) {
+            // Desactivar todas las pantallas personalizadas
+            screens.forEach(s => {
+                document.getElementById(s).classList.remove('active');
+            });
+            
+            if (appName === 'terminal') {
+                document.body.classList.add('show-terminal');
+                document.getElementById('header-app-title').textContent = 'Terminal';
+                const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+                if (isMobile) {
+                    document.getElementById('mobile-keyboard-bar').classList.add('active');
+                }
+                setTimeout(() => window.dispatchEvent(new Event('resize')), 100);
             } else {
-                tabTerminal.classList.remove('active');
-                tabDashboard.classList.add('active');
-                document.body.classList.add('show-dashboard');
+                document.body.classList.remove('show-terminal');
+                document.getElementById('mobile-keyboard-bar').classList.remove('active');
+                
+                if (appName === 'home') {
+                    document.getElementById('home-screen').classList.add('active');
+                    document.getElementById('header-app-title').textContent = 'LinuxMobile';
+                } else if (appName === 'files') {
+                    document.getElementById('files-app').classList.add('active');
+                    document.getElementById('header-app-title').textContent = 'Explorador';
+                    loadDirectory('/home/dxdx');
+                } else if (appName === 'monitor') {
+                    document.getElementById('monitor-app').classList.add('active');
+                    document.getElementById('header-app-title').textContent = 'Monitor';
+                    loadProcesses();
+                } else if (appName === 'gallery') {
+                    document.getElementById('gallery-app').classList.add('active');
+                    document.getElementById('header-app-title').textContent = 'Capturas';
+                    loadGallery();
+                }
+            }
+        }
+        
+        document.getElementById('app-terminal-btn').addEventListener('click', () => openApp('terminal'));
+        document.getElementById('app-files-btn').addEventListener('click', () => openApp('files'));
+        document.getElementById('app-monitor-btn').addEventListener('click', () => openApp('monitor'));
+        document.getElementById('app-gallery-btn').addEventListener('click', () => openApp('gallery'));
+        document.getElementById('nav-home-btn').addEventListener('click', () => openApp('home'));
+        document.getElementById('files-back-btn').addEventListener('click', () => openApp('home'));
+        document.getElementById('monitor-back-btn').addEventListener('click', () => openApp('home'));
+        document.getElementById('gallery-back-btn').addEventListener('click', () => openApp('home'));
+
+        // --- Lógica del Explorador de Archivos ---
+        let currentDirectory = '/home/dxdx';
+        
+        async function loadDirectory(path) {
+            try {
+                const res = await fetch('/api/files/list?path=' + encodeURIComponent(path));
+                const data = await res.json();
+                if (data.error) {
+                    alert('Error: ' + data.error);
+                    return;
+                }
+                currentDirectory = data.currentPath;
+                document.getElementById('files-path').textContent = currentDirectory;
+                
+                const container = document.getElementById('files-list-container');
+                container.innerHTML = '';
+                
+                // Opción para subir de nivel
+                if (currentDirectory !== '/' && currentDirectory !== '') {
+                    const parentDir = currentDirectory.substring(0, currentDirectory.lastIndexOf('/')) || '/';
+                    const upItem = document.createElement('div');
+                    upItem.className = 'file-item';
+                    upItem.innerHTML = '<span class="file-icon">📁</span><span class="file-name">.. (Subir nivel)</span>';
+                    upItem.addEventListener('click', () => loadDirectory(parentDir));
+                    container.appendChild(upItem);
+                }
+                
+                data.files.forEach(file => {
+                    const item = document.createElement('div');
+                    item.className = 'file-item';
+                    const icon = file.isDir ? '📁' : '📄';
+                    const sizeStr = file.isDir ? '' : formatBytes(file.size);
+                    item.innerHTML = '<span class="file-icon">' + icon + '</span><span class="file-name">' + file.name + '</span><span class="file-size">' + sizeStr + '</span>';
+                    item.addEventListener('click', () => {
+                        if (file.isDir) {
+                            loadDirectory(currentDirectory + '/' + file.name);
+                        } else {
+                            window.open('/api/files/view?path=' + encodeURIComponent(currentDirectory + '/' + file.name));
+                        }
+                    });
+                    container.appendChild(item);
+                });
+            } catch (e) {
+                console.error(e);
+            }
+        }
+        
+        function formatBytes(bytes, decimals = 2) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const dm = decimals < 0 ? 0 : decimals;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+        }
+
+        // --- Lógica del Monitor del Sistema ---
+        async function loadProcesses() {
+            try {
+                const res = await fetch('/api/system-processes');
+                const list = await res.json();
+                const tbody = document.getElementById('process-list-body');
+                tbody.innerHTML = '';
+                list.forEach(proc => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = '<td>' + proc.pid + '</td><td style="color:#10b981">' + proc.cpu + '%</td><td style="color:#38bdf8">' + proc.mem + '%</td><td style="max-width:120px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + proc.command + '</td><td><button class="kill-btn" data-pid="' + proc.pid + '">Kill</button></td>';
+                    tbody.appendChild(tr);
+                });
+                
+                // Listeners para botones de Kill
+                tbody.querySelectorAll('.kill-btn').forEach(btn => {
+                    btn.addEventListener('click', async (e) => {
+                        const pid = e.target.getAttribute('data-pid');
+                        if (confirm('¿Seguro que deseas matar el proceso ' + pid + '?')) {
+                            const resKill = await fetch('/api/process/kill', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                                body: 'pid=' + pid
+                            });
+                            const dataKill = await resKill.json();
+                            if (dataKill.success) {
+                                loadProcesses();
+                            } else {
+                                alert('No se pudo matar el proceso.');
+                            }
+                        }
+                    });
+                });
+            } catch (e) {
+                console.error(e);
             }
         }
 
-        tabTerminal.addEventListener('click', () => showTab('terminal'));
-        tabDashboard.addEventListener('click', () => showTab('dashboard'));
+        setInterval(() => {
+            const monitorApp = document.getElementById('monitor-app');
+            if (monitorApp && monitorApp.classList.contains('active')) {
+                loadProcesses();
+            }
+        }, 3000);
 
-        const runQuickCmd = (cmd) => {
-            send(cmd + '\n');
-            showTab('terminal');
-        };
-
-        const setupClick = (id, cmd) => {
-            const el = document.getElementById(id);
-            if (el) el.addEventListener('click', () => runQuickCmd(cmd));
-        };
-
-        setupClick('act-ls', 'ls -la');
-        setupClick('act-top', 'top');
-        setupClick('act-neofetch', 'neofetch');
-        setupClick('act-df', 'df -h');
-        setupClick('act-ip', 'ip a');
-        setupClick('act-clear', 'clear');
-
-        // Input de comando personalizado
-        const cmdInput = document.getElementById('cmd-input');
-        const runBtn = document.getElementById('btn-run-cmd');
-        if (runBtn && cmdInput) {
-            runBtn.addEventListener('click', () => {
-                const cmd = cmdInput.value.trim();
-                if (cmd) {
-                    runQuickCmd(cmd);
-                    cmdInput.value = '';
+        // --- Lógica de la Galería de Capturas ---
+        async function loadGallery() {
+            const img = document.getElementById('gallery-img-preview');
+            const noImg = document.getElementById('gallery-no-img');
+            img.style.display = 'none';
+            noImg.style.display = 'block';
+            noImg.textContent = 'Cargando captura...';
+            try {
+                const res = await fetch('/api/last-screenshot');
+                const data = await res.json();
+                if (data && data.path) {
+                    img.src = '/api/files/view?path=' + encodeURIComponent(data.path);
+                    img.onload = () => {
+                        img.style.display = 'block';
+                        noImg.style.display = 'none';
+                    };
+                } else {
+                    noImg.textContent = 'No se encontró ninguna captura reciente.';
                 }
-            });
-            cmdInput.addEventListener('keydown', (e) => {
-                if (e.key === 'Enter') {
-                    const cmd = cmdInput.value.trim();
-                    if (cmd) {
-                        runQuickCmd(cmd);
-                        cmdInput.value = '';
-                    }
-                }
-            });
+            } catch (e) {
+                noImg.textContent = 'Error al cargar la captura.';
+            }
         }
+        document.getElementById('btn-refresh-gallery').addEventListener('click', loadGallery);
 
-        // Obtener y actualizar métricas de sistema
+        // --- Actualizar Reloj del Header ---
+        function updateClock() {
+            const now = new Date();
+            const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            const clockEl = document.getElementById('header-time');
+            if (clockEl) clockEl.textContent = timeStr;
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+
+        // --- Detener propagación de clics y toques para evitar problemas con ttyd/xterm ---
+        const customElements = ['app-header', 'app-nav-bar', 'home-screen', 'files-app', 'monitor-app', 'gallery-app'];
+        customElements.forEach(id => {
+            const el = document.getElementById(id);
+            if (el) {
+                ['click', 'mousedown', 'mouseup', 'touchstart', 'touchend', 'pointerdown', 'pointerup'].forEach(evt => {
+                    el.addEventListener(evt, (e) => {
+                        e.stopPropagation();
+                    });
+                });
+            }
+        });
+
+        // --- Actualizar Métricas en Segundo Plano ---
         async function updateStats() {
             try {
                 const res = await fetch('/api/system-status');
-                if (res.status === 401) return; // Sesión expirada
+                if (res.status === 401) return;
                 const data = await res.json();
                 
                 document.getElementById('stat-cpu').textContent = data.cpu + '%';
-                document.getElementById('bar-cpu').style.width = data.cpu + '%';
+                const barCpu = document.getElementById('bar-cpu');
+                if (barCpu) barCpu.style.width = data.cpu + '%';
                 
                 document.getElementById('stat-mem').textContent = data.mem.used + ' / ' + data.mem.total + ' MB';
-                document.getElementById('bar-mem').style.width = data.mem.percent + '%';
+                const barMem = document.getElementById('bar-mem');
+                if (barMem) barMem.style.width = data.mem.percent + '%';
                 
                 document.getElementById('stat-disk').textContent = data.disk.used + ' / ' + data.disk.total;
-                document.getElementById('bar-disk').style.width = data.disk.percent + '%';
+                const barDisk = document.getElementById('bar-disk');
+                if (barDisk) barDisk.style.width = data.disk.percent + '%';
                 
                 document.getElementById('stat-temp').textContent = data.temp;
                 document.getElementById('stat-uptime').textContent = data.uptime;
             } catch (e) {
-                console.error('Error fetching system stats:', e);
+                console.error(e);
             }
         }
         setInterval(updateStats, 2500);
@@ -1540,6 +1824,94 @@ function handleRequest(req, res) {
         getSystemStatus((status) => {
             res.writeHead(200, { 'Content-Type': 'application/json' });
             res.end(JSON.stringify(status));
+        });
+        return;
+    }
+
+    // ── Endpoint API: Listar Archivos ─────────────────────
+    if (path_ === '/api/files/list') {
+        const targetDir = reqUrl.query.path || '/home/dxdx';
+        fs.readdir(targetDir, { withFileTypes: true }, (err, files) => {
+            if (err) {
+                res.writeHead(500, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ error: err.message }));
+                return;
+            }
+            const list = files.map(f => {
+                let size = 0;
+                try {
+                    if (f.isFile()) {
+                        size = fs.statSync(path.join(targetDir, f.name)).size;
+                    }
+                } catch(e) {}
+                return {
+                    name: f.name,
+                    isDir: f.isDirectory(),
+                    size: size
+                };
+            });
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ currentPath: targetDir, files: list }));
+        });
+        return;
+    }
+
+    // ── Endpoint API: Descargar/Ver Archivo ────────────────
+    if (path_ === '/api/files/view') {
+        const filePath = reqUrl.query.path;
+        if (!filePath || !fs.existsSync(filePath)) {
+            res.writeHead(404, { 'Content-Type': 'text/plain' });
+            res.end("File not found");
+            return;
+        }
+        const stat = fs.statSync(filePath);
+        res.writeHead(200, {
+            'Content-Type': 'application/octet-stream',
+            'Content-Length': stat.size,
+            'Content-Disposition': `attachment; filename="${encodeURIComponent(path.basename(filePath))}"`
+        });
+        fs.createReadStream(filePath).pipe(res);
+        return;
+    }
+
+    // ── Endpoint API: Listar Procesos ─────────────────────
+    if (path_ === '/api/system-processes') {
+        exec("ps -aux --sort=-%cpu | head -n 25", (err, stdout) => {
+            if (err) {
+                res.writeHead(500, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ error: err.message }));
+                return;
+            }
+            const lines = stdout.trim().split('\n');
+            const list = lines.slice(1).map(line => {
+                const parts = line.split(/\s+/);
+                return {
+                    user: parts[0],
+                    pid: parts[1],
+                    cpu: parts[2],
+                    mem: parts[3],
+                    command: parts.slice(10).join(' ')
+                };
+            }).filter(p => p.pid && p.command);
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify(list));
+        });
+        return;
+    }
+
+    // ── Endpoint API: Matar Proceso ───────────────────────
+    if (path_ === '/api/process/kill' && req.method === 'POST') {
+        parseBody(req, (body) => {
+            const params = new URLSearchParams(body);
+            const pid = parseInt(params.get('pid'), 10);
+            if (pid) {
+                exec(`kill -9 ${pid}`, (err) => {
+                    res.writeHead(200, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({ success: !err }));
+                });
+            } else {
+                res.writeHead(400); res.end("Missing PID");
+            }
         });
         return;
     }
