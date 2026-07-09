@@ -976,9 +976,12 @@ function injectHTML(rawHtml) {
       }
 
       /* Terminal View Specific CSS */
+      body.show-terminal #app-header {
+          display: none !important;
+      }
       body.show-terminal > div:not(#app-header):not(#app-nav-bar):not(#mobile-keyboard-bar):not(#pwa-install-btn):not(.app-screen):not(script) {
-          margin-top: 50px !important;
-          height: calc(100vh - 105px) !important;
+          margin-top: 0px !important;
+          height: calc(100vh - 55px) !important;
           box-sizing: border-box;
       }
       body:not(.show-terminal) > div:not(#app-header):not(#app-nav-bar):not(#mobile-keyboard-bar):not(#pwa-install-btn):not(.app-screen):not(script) {
@@ -988,7 +991,7 @@ function injectHTML(rawHtml) {
           bottom: 55px !important;
       }
       body.show-terminal.mobile-bar-active > div:not(#app-header):not(#app-nav-bar):not(#mobile-keyboard-bar):not(#pwa-install-btn):not(.app-screen):not(script) {
-          height: calc(100vh - 155px) !important;
+          height: calc(100vh - 105px) !important;
       }
 
       /* Dashboard Cards & Layout */
@@ -1408,8 +1411,8 @@ function injectHTML(rawHtml) {
                     });
                     if (termContainer) {
                         termContainer.style.position = 'absolute';
-                        termContainer.style.top = (viewport.offsetTop + 50) + 'px';
-                        termContainer.style.height = (viewport.height - 105) + 'px';
+                        termContainer.style.top = viewport.offsetTop + 'px';
+                        termContainer.style.height = (viewport.height - 55) + 'px';
                         termContainer.style.left = viewport.offsetLeft + 'px';
                         termContainer.style.width = viewport.width + 'px';
                     }
@@ -2400,12 +2403,15 @@ function startBraveProcess() {
         const { spawn } = require('child_process');
         const profileDir = path.join(__dirname, 'brave-profile');
         braveProcess = spawn('brave-browser', [
-            '--headless',
+            '--headless=new',
             '--remote-debugging-port=9222',
             '--disable-gpu',
             '--no-sandbox',
             `--user-data-dir=${profileDir}`,
-            '--window-size=375,550'
+            '--window-size=375,550',
+            '--user-agent=Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36',
+            '--disable-blink-features=AutomationControlled',
+            '--force-device-scale-factor=2'
         ]);
         braveProcess.on('error', (err) => {
             console.error("Failed to start Brave:", err);
