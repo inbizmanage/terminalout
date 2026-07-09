@@ -1,0 +1,741 @@
+#!/usr/bin/env python3
+import sys
+import os
+import socket
+import secrets
+import string
+import json
+import subprocess
+import argparse
+import shutil
+import time
+
+# Códigos de color ANSI para formateo de consola
+C_GREEN = '\033[92m'
+C_BLUE = '\033[94m'
+C_CYAN = '\033[96m'
+C_YELLOW = '\033[93m'
+C_RED = '\033[91m'
+C_MAGENTA = '\033[95m'
+C_BOLD = '\033[1m'
+C_RESET = '\033[0m'
+
+THEMES = {
+    "slate": {
+        "background": "#0f172a",
+        "foreground": "#cbd5e1",
+        "cursor": "#38bdf8",
+        "cursorAccent": "#0f172a",
+        "selectionBackground": "rgba(56, 189, 248, 0.3)",
+        "black": "#1e293b",
+        "red": "#f43f5e",
+        "green": "#10b981",
+        "yellow": "#f59e0b",
+        "blue": "#3b82f6",
+        "magenta": "#d946ef",
+        "cyan": "#06b6d4",
+        "white": "#cbd5e1",
+        "brightBlack": "#475569",
+        "brightRed": "#fda4af",
+        "brightGreen": "#34d399",
+        "brightYellow": "#fbbf24",
+        "brightBlue": "#60a5fa",
+        "brightMagenta": "#f472b6",
+        "brightCyan": "#22d3ee",
+        "brightWhite": "#f1f5f9"
+    },
+    "dracula": {
+        "background": "#282a36",
+        "foreground": "#f8f8f2",
+        "cursor": "#f8f8f0",
+        "cursorAccent": "#282a36",
+        "selectionBackground": "rgba(68, 71, 90, 0.5)",
+        "black": "#21222c",
+        "red": "#ff5555",
+        "green": "#50fa7b",
+        "yellow": "#f1fa8c",
+        "blue": "#bd93f9",
+        "magenta": "#ff79c6",
+        "cyan": "#8be9fd",
+        "white": "#f8f8f2",
+        "brightBlack": "#6272a4",
+        "brightRed": "#ff6e6e",
+        "brightGreen": "#69ff94",
+        "brightYellow": "#ffffa5",
+        "brightBlue": "#d6acff",
+        "brightMagenta": "#ff92df",
+        "brightCyan": "#a4ffff",
+        "brightWhite": "#ffffff"
+    },
+    "nord": {
+        "background": "#2e3440",
+        "foreground": "#d8dee9",
+        "cursor": "#d8dee9",
+        "cursorAccent": "#2e3440",
+        "selectionBackground": "rgba(67, 76, 94, 0.5)",
+        "black": "#3b4252",
+        "red": "#bf616a",
+        "green": "#a3be8c",
+        "yellow": "#ebcb8b",
+        "blue": "#81a1c1",
+        "magenta": "#b48ead",
+        "cyan": "#88c0d0",
+        "white": "#e5e9f0",
+        "brightBlack": "#4c566a",
+        "brightRed": "#bf616a",
+        "brightGreen": "#a3be8c",
+        "brightYellow": "#ebcb8b",
+        "brightBlue": "#81a1c1",
+        "brightMagenta": "#b48ead",
+        "brightCyan": "#8fbcbb",
+        "brightWhite": "#eceff4"
+    },
+    "monokai": {
+        "background": "#272822",
+        "foreground": "#f8f8f2",
+        "cursor": "#f8f8f0",
+        "cursorAccent": "#272822",
+        "selectionBackground": "rgba(73, 72, 62, 0.5)",
+        "black": "#272822",
+        "red": "#f92672",
+        "green": "#a6e22e",
+        "yellow": "#f4bf75",
+        "blue": "#66d9ef",
+        "magenta": "#ae81ff",
+        "cyan": "#a1efe4",
+        "white": "#f8f8f2",
+        "brightBlack": "#75715e",
+        "brightRed": "#f92672",
+        "brightGreen": "#a6e22e",
+        "brightYellow": "#f4bf75",
+        "brightBlue": "#66d9ef",
+        "brightMagenta": "#ae81ff",
+        "brightCyan": "#a1efe4",
+        "brightWhite": "#f9f8f5"
+    },
+    "cyberpunk": {
+        "background": "#1a0826",
+        "foreground": "#00ff66",
+        "cursor": "#ff007f",
+        "cursorAccent": "#1a0826",
+        "selectionBackground": "rgba(255, 0, 127, 0.3)",
+        "black": "#1a0826",
+        "red": "#ff0055",
+        "green": "#00ff66",
+        "yellow": "#ffe600",
+        "blue": "#00ffff",
+        "magenta": "#ff00ff",
+        "cyan": "#00ffff",
+        "white": "#ffffff",
+        "brightBlack": "#551a8b",
+        "brightRed": "#ff3377",
+        "brightGreen": "#33ff88",
+        "brightYellow": "#ffeb33",
+        "brightBlue": "#33ffff",
+        "brightMagenta": "#ff33ff",
+        "brightCyan": "#33ffff",
+        "brightWhite": "#ffffff"
+    }
+}
+
+def find_ttyd():
+    ttyd_path = shutil.which('ttyd')
+    if ttyd_path:
+        return ttyd_path
+    
+    home_ttyd = os.path.expanduser('~/.local/bin/ttyd')
+    if os.path.exists(home_ttyd) and os.access(home_ttyd, os.X_OK):
+        return home_ttyd
+        
+    return None
+
+def find_cloudflared():
+    cf_path = shutil.which('cloudflared')
+    if cf_path:
+        return cf_path
+    
+    home_cf = os.path.expanduser('~/.local/bin/cloudflared')
+    if os.path.exists(home_cf) and os.access(home_cf, os.X_OK):
+        return home_cf
+        
+    return None
+
+def start_cloudflare_tunnel(port, ssl_enabled):
+    cf_path = find_cloudflared()
+    if not cf_path:
+        return None, None
+    
+    cf_log_dir = os.path.expanduser('~/.terminalout')
+    os.makedirs(cf_log_dir, exist_ok=True)
+    cf_log_path = os.path.join(cf_log_dir, 'cloudflared.log')
+    if os.path.exists(cf_log_path):
+        try:
+            os.remove(cf_log_path)
+        except Exception:
+            pass
+            
+    try:
+        cf_log_file = open(cf_log_path, 'w')
+        cf_url_target = f"https://127.0.0.1:{port}" if ssl_enabled else f"http://127.0.0.1:{port}"
+        cf_cmd = [cf_path, "tunnel", "--url", cf_url_target]
+        if ssl_enabled:
+            cf_cmd.append("--no-tls-verify")
+        
+        cf_process = subprocess.Popen(
+            cf_cmd,
+            stdout=cf_log_file,
+            stderr=cf_log_file,
+            stdin=subprocess.DEVNULL,
+            start_new_session=True
+        )
+        
+        # Esperar a la URL
+        cf_url = None
+        for _ in range(30): # hasta 15 segundos
+            time.sleep(0.5)
+            if os.path.exists(cf_log_path):
+                with open(cf_log_path, 'r') as f:
+                    content = f.read()
+                    import re
+                    match = re.search(r'https://[a-zA-Z0-9-]+\.trycloudflare\.com', content)
+                    if match:
+                        cf_url = match.group(0)
+                        break
+            if cf_process.poll() is not None:
+                break
+                
+        return cf_process, cf_url
+    except Exception as e:
+        print(f"No se pudo iniciar Cloudflare Tunnel: {e}")
+        return None, None
+
+def find_free_port(start_port=7681):
+    port = start_port
+    while port < 65535:
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            try:
+                s.bind(('0.0.0.0', port))
+                return port
+            except socket.error:
+                port += 1
+    return None
+
+def get_local_ips():
+    ips = ['127.0.0.1']
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect(('8.8.8.8', 80))
+        main_ip = s.getsockname()[0]
+        if main_ip not in ips:
+            ips.append(main_ip)
+        s.close()
+    except Exception:
+        pass
+    return ips
+
+def generate_password(length=8):
+    alphabet = string.ascii_lowercase + string.digits
+    return ''.join(secrets.choice(alphabet) for _ in range(length))
+
+def ensure_ssl_certs():
+    ssl_dir = os.path.expanduser('~/.terminalout/ssl')
+    os.makedirs(ssl_dir, exist_ok=True)
+    cert_path = os.path.join(ssl_dir, 'cert.pem')
+    key_path = os.path.join(ssl_dir, 'key.pem')
+    
+    if not os.path.exists(cert_path) or not os.path.exists(key_path):
+        print(f"{C_YELLOW}Generando certificado SSL autofirmado para HTTPS local...{C_RESET}")
+        cmd = [
+            'openssl', 'req', '-newkey', 'rsa:2048', '-nodes', 
+            '-keyout', key_path, '-x509', '-days', '365', 
+            '-out', cert_path, '-subj', '/CN=localhost'
+        ]
+        try:
+            subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True)
+            print(f"{C_GREEN}Certificado SSL generado con éxito en {ssl_dir}{C_RESET}")
+        except subprocess.CalledProcessError as e:
+            print(f"{C_RED}Error al generar el certificado SSL con openssl: {e}{C_RESET}")
+            sys.exit(1)
+            
+    return cert_path, key_path
+
+def make_qr_lines(data, invert=True):
+    """Genera una lista de líneas de texto QR en ASCII."""
+    try:
+        import qrcode as _qrcode
+        import io
+        qr = _qrcode.QRCode(
+            version=None,
+            error_correction=_qrcode.constants.ERROR_CORRECT_L,
+            box_size=1,
+            border=1
+        )
+        qr.add_data(data)
+        qr.make(fit=True)
+        buf = io.StringIO()
+        qr.print_ascii(out=buf, invert=invert)
+        lines = buf.getvalue().splitlines()
+        return lines
+    except Exception:
+        return ['[QR no disponible]']
+
+def print_qr_side_by_side(lines_left, lines_right, label_left, label_right):
+    """Imprime dos QR codes uno al lado del otro con etiquetas."""
+    # Normalizar longitudes
+    max_l = max(len(l) for l in lines_left)  if lines_left  else 0
+    max_r = max(len(l) for l in lines_right) if lines_right else 0
+    max_rows = max(len(lines_left), len(lines_right))
+    
+    gap = '   '
+    
+    # Encabezados centrados
+    left_header  = label_left.center(max_l)
+    right_header = label_right.center(max_r)
+    print(f"  {C_CYAN}{C_BOLD}{left_header}{C_RESET}{gap}{C_MAGENTA}{C_BOLD}{right_header}{C_RESET}")
+    print(f"  {'─' * max_l}{gap}{'─' * max_r}")
+    
+    for i in range(max_rows):
+        l = lines_left[i]  if i < len(lines_left)  else ' ' * max_l
+        r = lines_right[i] if i < len(lines_right) else ' ' * max_r
+        # Padding a la derecha para alinear
+        l = l + ' ' * (max_l - len(l))
+        r = r + ' ' * (max_r - len(r))
+        print(f"  {l}{gap}{r}")
+    print()
+
+def print_banner(port, ips, totp_secret, theme_name, read_only, ssl_enabled, is_background=False, pid=None, cf_url=None):
+    mode_text = f"{C_RED}Solo Lectura{C_RESET}" if read_only else f"{C_GREEN}Lectura y Escritura (Interactivo){C_RESET}"
+    protocol = "https" if ssl_enabled else "http"
+    status_text = f"Activo (Segundo Plano, PID: {pid})" if is_background else "Activo"
+    
+    # URL de red LAN (la más útil para escanear desde otro dispositivo si no hay cloudflare)
+    lan_url = None
+    for ip in ips:
+        if ip != '127.0.0.1':
+            lan_url = f"{protocol}://{ip}:{port}"
+            break
+    if not lan_url:
+        lan_url = f"{protocol}://127.0.0.1:{port}"
+        
+    qr_target_url = cf_url if cf_url else lan_url
+    totp_uri = f"otpauth://totp/terminalout?secret={totp_secret}&issuer=Local%20Terminal"
+    
+    print(f"\n{C_BLUE}{C_BOLD}┌────────────────────────────────────────────────────────┐{C_RESET}")
+    print(f"{C_BLUE}{C_BOLD}│{C_RESET} 🚀  {C_CYAN}{C_BOLD}terminalout: Servidor de Terminal Web ({status_text}){C_RESET:<70} {C_BLUE}{C_BOLD}│{C_RESET}")
+    print(f"{C_BLUE}{C_BOLD}├────────────────────────────────────────────────────────┤{C_RESET}")
+    print(f"{C_BLUE}{C_BOLD}│{C_RESET}  {C_BOLD}Autenticación:{C_RESET} {C_GREEN}Google Authenticator (2FA/TOTP){C_RESET:<31} {C_BLUE}{C_BOLD}│{C_RESET}")
+    print(f"{C_BLUE}{C_BOLD}│{C_RESET}  {C_BOLD}Modo:{C_RESET} {mode_text:<57} {C_BLUE}{C_BOLD}│{C_RESET}")
+    print(f"{C_BLUE}{C_BOLD}│{C_RESET}  {C_BOLD}Protocolo:{C_RESET} {C_MAGENTA}{C_BOLD}{protocol.upper()}{C_RESET:<48} {C_BLUE}{C_BOLD}│{C_RESET}")
+    if cf_url:
+        print(f"{C_BLUE}{C_BOLD}│{C_RESET}  {C_BOLD}Túnel Público:{C_RESET} {C_GREEN}Activo (Cloudflare, SSL válido){C_RESET:<33} {C_BLUE}{C_BOLD}│{C_RESET}")
+    else:
+        print(f"{C_BLUE}{C_BOLD}│{C_RESET}  {C_BOLD}Túnel Público:{C_RESET} {C_RED}Inactivo (Solo local/LAN){C_RESET:<39} {C_BLUE}{C_BOLD}│{C_RESET}")
+    print(f"{C_BLUE}{C_BOLD}│{C_RESET}                                                        {C_BLUE}{C_BOLD}│{C_RESET}")
+    
+    print(f"{C_BLUE}{C_BOLD}│{C_RESET}  {C_YELLOW}{C_BOLD}🔗 ENLACES DE ACCESO:{C_RESET}                                 {C_BLUE}{C_BOLD}│{C_RESET}")
+    if cf_url:
+        print(f"{C_BLUE}{C_BOLD}│{C_RESET}   • {C_GREEN}{C_BOLD}Internet  -> {cf_url:<34}{C_RESET} {C_BLUE}{C_BOLD}│{C_RESET}")
+    for ip in ips:
+        type_lbl = "Local" if ip == '127.0.0.1' else "Red LAN"
+        url = f"{protocol}://{ip}:{port}"
+        print(f"{C_BLUE}{C_BOLD}│{C_RESET}   • {type_lbl:<8} -> {C_GREEN}{C_BOLD}{url:<34}{C_RESET} {C_BLUE}{C_BOLD}│{C_RESET}")
+    print(f"{C_BLUE}{C_BOLD}│{C_RESET}                                                        {C_BLUE}{C_BOLD}│{C_RESET}")
+    print(f"{C_BLUE}{C_BOLD}│{C_RESET}  {C_MAGENTA}{C_BOLD}🔐 Secreto 2FA manual:{C_RESET} {C_CYAN}{C_BOLD}{totp_secret}{C_RESET}")
+    print(f"{C_BLUE}{C_BOLD}└────────────────────────────────────────────────────────┘{C_RESET}")
+    
+    # ── QR Codes en la terminal ──────────────────────────────
+    print(f"\n{C_BOLD}  Escanea con tu teléfono:{C_RESET}\n")
+    qr_url  = make_qr_lines(qr_target_url, invert=True)
+    qr_totp = make_qr_lines(totp_uri,      invert=True)
+    print_qr_side_by_side(
+        qr_url,  qr_totp,
+        f"📱 Abrir Terminal ({qr_target_url})",
+        "🔑 Configurar Google Authenticator"
+    )
+    
+    print(f"{C_BLUE}{C_BOLD}┌────────────────────────────────────────────────────────┐{C_RESET}")
+    if is_background:
+        print(f"{C_BLUE}{C_BOLD}│{C_RESET}  {C_GREEN}El servidor está corriendo en segundo plano.{C_RESET}          {C_BLUE}{C_BOLD}│{C_RESET}")
+        print(f"{C_BLUE}{C_BOLD}│{C_RESET}  {C_YELLOW}Ya puedes cerrar esta ventana de la terminal.{C_RESET}         {C_BLUE}{C_BOLD}│{C_RESET}")
+        print(f"{C_BLUE}{C_BOLD}│{C_RESET}  {C_CYAN}Para detenerlo: {C_BOLD}terminalout stop{C_RESET}                      {C_BLUE}{C_BOLD}│{C_RESET}")
+    else:
+        print(f"{C_BLUE}{C_BOLD}│{C_RESET}  {C_YELLOW}Presiona {C_RED}{C_BOLD}Ctrl+C{C_RESET}{C_YELLOW} para detener el servidor de terminal. {C_RESET} {C_BLUE}{C_BOLD}│{C_RESET}")
+    print(f"{C_BLUE}{C_BOLD}└────────────────────────────────────────────────────────┘{C_RESET}\n")
+
+
+def stop_daemon():
+    pid_file = os.path.expanduser('~/.terminalout/terminalout.pid')
+    session_file = os.path.expanduser('~/.terminalout/session.json')
+    
+    if not os.path.exists(pid_file):
+        print(f"{C_YELLOW}No hay ningún servidor terminalout activo registrado en segundo plano.{C_RESET}")
+        return
+        
+    try:
+        with open(pid_file, 'r') as f:
+            pids_str = f.read().strip()
+        pids = [int(p) for p in pids_str.split(',') if p]
+    except Exception:
+        pids = []
+        
+    if pids:
+        print(f"Deteniendo procesos de terminalout (PIDs: {pids_str})...")
+        for pid in pids:
+            try:
+                import signal
+                os.kill(pid, signal.SIGTERM)
+                print(f" - Proceso {pid} detenido.")
+            except ProcessLookupError:
+                print(f" - Proceso {pid} ya no estaba en ejecución.")
+            except PermissionError:
+                print(f"{C_RED} - Sin permisos suficientes para detener el proceso {pid}.{C_RESET}")
+            except Exception as e:
+                print(f"{C_RED} - Error al detener el proceso {pid}: {e}{C_RESET}")
+        print(f"{C_GREEN}Servidor detenido y limpio.{C_RESET}")
+            
+    # Limpiar archivos de estado
+    if os.path.exists(pid_file):
+        os.remove(pid_file)
+    if os.path.exists(session_file):
+        os.remove(session_file)
+
+def print_status():
+    session_file = os.path.expanduser('~/.terminalout/session.json')
+    pid_file = os.path.expanduser('~/.terminalout/terminalout.pid')
+    
+    if not os.path.exists(session_file) or not os.path.exists(pid_file):
+        print(f"{C_YELLOW}No hay ningún servidor terminalout en segundo plano en ejecución.{C_RESET}")
+        return
+        
+    try:
+        with open(session_file, 'r') as f:
+            session = json.load(f)
+        
+        # Verificar si los PIDs siguen vivos
+        pids = session.get('pids', [])
+        alive = True
+        for pid in pids:
+            try:
+                os.kill(pid, 0)
+            except OSError:
+                alive = False
+                break
+                
+        if not alive:
+            print(f"{C_RED}El servidor en segundo plano está incompleto o inactivo. Limpiando residuos...{C_RESET}")
+            stop_daemon()
+            return
+            
+        # Leer secreto TOTP del config
+        totp_secret = '???'
+        try:
+            cfg_path = os.path.expanduser('~/.terminalout/config.json')
+            with open(cfg_path) as _f:
+                totp_secret = json.load(_f).get('totp_secret', '???')
+        except Exception:
+            pass
+
+        print_banner(
+            port=session['port'],
+            ips=session['ips'],
+            totp_secret=totp_secret,
+            theme_name=session['theme'],
+            read_only=session['read_only'],
+            ssl_enabled=session['ssl_enabled'],
+            is_background=True,
+            pid=pids[1],
+            cf_url=session.get('cf_url')
+        )
+    except Exception as e:
+        print(f"{C_RED}Error al leer el estado del servidor: {e}{C_RESET}")
+
+def main():
+    parser = argparse.ArgumentParser(description="terminalout: Servidor web de terminal con soporte HTTPS, segundo plano y optimización móvil PWA.")
+    
+    parser.add_argument("action", nargs="?", choices=["start", "stop", "status"], default=None, 
+                        help="Acción a realizar: 'start' (segundo plano), 'stop' (detener), 'status' (ver estado)")
+    
+    parser.add_argument("-b", "--background", action="store_true", help="Ejecutar el servidor en segundo plano (equivalente a 'start')")
+    parser.add_argument("-p", "--port", type=int, default=None, help="Puerto del servidor (por defecto busca a partir de 7681)")
+    parser.add_argument("-i", "--interface", type=str, default="0.0.0.0", help="Interfaz de red a enlazar (por defecto: 0.0.0.0)")
+    parser.add_argument("-r", "--read-only", action="store_true", help="Hacer la terminal de solo lectura")
+    parser.add_argument("-u", "--username", type=str, default="admin", help="Nombre de usuario para basic auth")
+    parser.add_argument("-P", "--password", type=str, default=None, help="Contraseña para basic auth (por defecto se genera aleatoria)")
+    parser.add_argument("-n", "--no-auth", action="store_true", help="Desactivar autenticación (¡Peligro!)")
+    parser.add_argument("-t", "--theme", type=str, choices=list(THEMES.keys()), default="slate", help="Tema visual")
+    parser.add_argument("-c", "--command", type=str, default=None, help="Comando a ejecutar (por defecto la shell actual o bash)")
+    parser.add_argument("--http", action="store_true", help="Usar HTTP en lugar de HTTPS")
+    
+    args = parser.parse_args()
+    
+    if args.action == 'stop':
+        stop_daemon()
+        sys.exit(0)
+    elif args.action == 'status':
+        print_status()
+        sys.exit(0)
+    elif args.action == 'start':
+        args.background = True
+
+    # 1. Verificar binario ttyd y proxy js
+    ttyd_path = find_ttyd()
+    if not ttyd_path:
+        print(f"{C_RED}{C_BOLD}Error: No se pudo encontrar el binario de 'ttyd'.{C_RESET}")
+        sys.exit(1)
+        
+    proxy_script = os.path.expanduser('~/.terminalout/server.js')
+    if not os.path.exists(proxy_script):
+        print(f"{C_RED}{C_BOLD}Error: No se pudo encontrar el script proxy en '{proxy_script}'.{C_RESET}")
+        sys.exit(1)
+        
+    # 2. Configurar puertos
+    port = args.port
+    if port is None:
+        port = find_free_port(7681)
+        if port is None:
+            print(f"{C_RED}{C_BOLD}Error: No se pudo encontrar ningún puerto libre para el proxy.{C_RESET}")
+            sys.exit(1)
+            
+    ttyd_port = find_free_port(port + 1)
+    if ttyd_port is None:
+        print(f"{C_RED}{C_BOLD}Error: No se pudo encontrar ningún puerto libre para ttyd.{C_RESET}")
+        sys.exit(1)
+            
+    # 3. Configurar comando
+    cmd = args.command
+    if not cmd:
+        cmd = os.environ.get('SHELL', 'bash')
+        
+    # 4. Cargar o crear configuración TOTP
+    config_path = os.path.expanduser('~/.terminalout/config.json')
+    os.makedirs(os.path.expanduser('~/.terminalout'), exist_ok=True)
+    try:
+        with open(config_path) as _f:
+            _cfg = json.load(_f)
+    except Exception:
+        _cfg = {}
+
+    if 'totp_secret' not in _cfg:
+        # Generar secreto TOTP con Python
+        import base64
+        totp_secret = base64.b32encode(os.urandom(20)).decode('utf-8').rstrip('=')
+        _cfg['totp_secret'] = totp_secret
+        with open(config_path, 'w') as _f:
+            json.dump(_cfg, _f)
+        print(f"\n{C_GREEN}{C_BOLD}✓ Secreto TOTP generado por primera vez.{C_RESET}")
+        print(f"  Abre la URL del servidor en tu navegador para escanear el QR con Google Authenticator.\n")
+    
+    # 5. Obtener IPs locales
+    ips = get_local_ips()
+    
+    # 6. Configurar SSL / HTTPS
+    ssl_enabled = not args.http
+    cert_path, key_path = None, None
+    if ssl_enabled:
+        cert_path, key_path = ensure_ssl_certs()
+        
+    # 7. Preparar argumentos de ttyd (se enlaza SOLAMENTE en localhost, sin auth ya que la maneja el proxy)
+    ttyd_args = [ttyd_path, "-p", str(ttyd_port), "-i", "127.0.0.1"]
+    if not args.read_only:
+        ttyd_args.append("-W")
+        
+    # Pasar el tema visual a ttyd
+    theme_data = THEMES[args.theme]
+    client_options = {
+        "theme": theme_data,
+        "fontSize": 15,
+        "fontFamily": "JetBrains Mono, Fira Code, Cascadia Code, Courier New, monospace",
+        "cursorBlink": True,
+        "macOptionIsMeta": True
+    }
+    for key, val in client_options.items():
+        if isinstance(val, dict):
+            val_str = json.dumps(val, separators=(',', ':'))
+            ttyd_args.extend(["-t", f"{key}={val_str}"])
+        else:
+            val_str = str(val).lower() if isinstance(val, bool) else str(val)
+            ttyd_args.extend(["-t", f"{key}={val_str}"])
+    ttyd_args.append(cmd)
+    
+    # 8. Preparar argumentos de proxy Node.js
+    config_path = os.path.expanduser('~/.terminalout/config.json')
+    proxy_args = [
+        "node", proxy_script,
+        f"--port={port}",
+        f"--ttyd-port={ttyd_port}",
+        f"--ssl={'true' if ssl_enabled else 'false'}",
+        f"--theme={args.theme}",
+        f"--config={config_path}"
+    ]
+    if ssl_enabled:
+        proxy_args.extend([
+            f"--cert={cert_path}",
+            f"--key={key_path}"
+        ])
+        
+    # 9. Ejecución
+    if args.background:
+        pid_file = os.path.expanduser('~/.terminalout/terminalout.pid')
+        if os.path.exists(pid_file):
+            try:
+                with open(pid_file, 'r') as f:
+                    pids_str = f.read().strip()
+                pids = [int(p) for p in pids_str.split(',') if p]
+                for p in pids:
+                    os.kill(p, 0)
+                print(f"{C_RED}Error: Ya hay una instancia de terminalout activa en segundo plano (PIDs: {pids_str}).{C_RESET}")
+                print(f"Detén la sesión previa con {C_BOLD}terminalout stop{C_RESET} antes de abrir una nueva.")
+                sys.exit(1)
+            except (OSError, ValueError):
+                pass
+
+        os.makedirs(os.path.expanduser('~/.terminalout'), exist_ok=True)
+        log_path = os.path.expanduser('~/.terminalout/terminalout.log')
+        log_file = open(log_path, 'a')
+        
+        try:
+            # Arrancar ttyd
+            ttyd_process = subprocess.Popen(
+                ttyd_args, 
+                stdout=log_file, 
+                stderr=log_file, 
+                stdin=subprocess.DEVNULL,
+                start_new_session=True
+            )
+            
+            time.sleep(0.5)
+            if ttyd_process.poll() is not None:
+                print(f"{C_RED}Error: El servidor ttyd no pudo mantenerse en ejecución.{C_RESET}")
+                print(f"Revisa el log en: {log_path}")
+                sys.exit(1)
+                
+            # Arrancar Proxy Node.js
+            proxy_process = subprocess.Popen(
+                proxy_args, 
+                stdout=log_file, 
+                stderr=log_file, 
+                stdin=subprocess.DEVNULL,
+                start_new_session=True
+            )
+            
+            time.sleep(0.5)
+            if proxy_process.poll() is not None:
+                ttyd_process.terminate()
+                ttyd_process.wait()
+                print(f"{C_RED}Error: El servidor proxy no pudo mantenerse en ejecución.{C_RESET}")
+                print(f"Revisa el log en: {log_path}")
+                sys.exit(1)
+                
+            # Arrancar túnel de Cloudflare si está disponible
+            cf_process, cf_url = start_cloudflare_tunnel(port, ssl_enabled)
+            
+            pids = [ttyd_process.pid, proxy_process.pid]
+            if cf_process:
+                pids.append(cf_process.pid)
+            
+            # Guardar PIDs
+            pids_str = ",".join(str(p) for p in pids)
+            with open(pid_file, 'w') as f:
+                f.write(pids_str)
+                
+            session_data = {
+                "pids": pids,
+                "port": port,
+                "ips": ips,
+                "no_auth": False,
+                "theme": args.theme,
+                "read_only": args.read_only,
+                "ssl_enabled": ssl_enabled,
+                "cf_url": cf_url
+            }
+            session_file = os.path.expanduser('~/.terminalout/session.json')
+            with open(session_file, 'w') as f:
+                json.dump(session_data, f)
+
+            # Leer el secreto TOTP del config
+            totp_secret = cfg.get('totp_secret', '???') if 'cfg' in dir() else '???'
+            try:
+                import json as _json
+                with open(config_path) as _f:
+                    totp_secret = _json.load(_f).get('totp_secret', '???')
+            except Exception:
+                pass
+
+            print_banner(port, ips, totp_secret, args.theme, args.read_only, ssl_enabled, is_background=True, pid=proxy_process.pid, cf_url=cf_url)
+            
+            if ssl_enabled:
+                print(f"{C_YELLOW}⚠️  NOTA DE SEGURIDAD:{C_RESET}")
+                print(f" Al acceder vía HTTPS con certificado autofirmado local, tu navegador dirá 'La conexión no es privada'.")
+                print(f" Para proceder, haz clic en '{C_BOLD}Configuración avanzada{C_RESET}' y selecciona '{C_BOLD}Acceder a... (no seguro){C_RESET}'.\n")
+                
+        except Exception as e:
+            print(f"{C_RED}Error al iniciar el servidor en segundo plano: {e}{C_RESET}")
+            sys.exit(1)
+            
+    else:
+        # Ejecución estándar en primer plano
+        totp_secret = '???'
+        try:
+            import json as _j
+            with open(config_path) as _f:
+                totp_secret = _j.load(_f).get('totp_secret', '???')
+        except Exception:
+            pass
+
+        ttyd_process = None
+        proxy_process = None
+        cf_process = None
+        cf_url = None
+        try:
+            # 1. Arrancar ttyd
+            ttyd_process = subprocess.Popen(
+                ttyd_args,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL
+            )
+            time.sleep(0.5)
+            if ttyd_process.poll() is not None:
+                print(f"{C_RED}Error: El servidor ttyd no pudo iniciarse.{C_RESET}")
+                sys.exit(1)
+                
+            # 2. Arrancar Proxy
+            proxy_process = subprocess.Popen(proxy_args)
+            time.sleep(0.5)
+            if proxy_process.poll() is not None:
+                print(f"{C_RED}Error: El servidor proxy no pudo iniciarse.{C_RESET}")
+                sys.exit(1)
+
+            # 3. Arrancar Túnel de Cloudflare
+            cf_process, cf_url = start_cloudflare_tunnel(port, ssl_enabled)
+            
+            # 4. Imprimir Banner ahora que tenemos toda la info
+            print_banner(port, ips, totp_secret, args.theme, args.read_only, ssl_enabled, is_background=False, cf_url=cf_url)
+            
+            if ssl_enabled:
+                print(f"{C_YELLOW}⚠️  NOTA DE SEGURIDAD:{C_RESET}")
+                print(f" Al acceder vía HTTPS con certificado autofirmado local, tu navegador dirá 'La conexión no es privada'.")
+                print(f" Para proceder, haz clic en '{C_BOLD}Configuración avanzada{C_RESET}' y selecciona '{C_BOLD}Acceder a... (no seguro){C_RESET}'.\n")
+
+            while True:
+                time.sleep(1)
+                if ttyd_process.poll() is not None or proxy_process.poll() is not None:
+                    break
+                if cf_process and cf_process.poll() is not None:
+                    print(f"{C_RED}El túnel de Cloudflare se ha cerrado inesperadamente.{C_RESET}")
+                    break
+        except KeyboardInterrupt:
+            print(f"\n{C_YELLOW}Deteniendo servidores...{C_RESET}")
+        finally:
+            if ttyd_process:
+                ttyd_process.terminate()
+                ttyd_process.wait()
+            if proxy_process:
+                proxy_process.terminate()
+                proxy_process.wait()
+            if cf_process:
+                cf_process.terminate()
+                cf_process.wait()
+            print(f"{C_GREEN}Servidores detenidos correctamente. ¡Hasta luego!{C_RESET}")
+
+if __name__ == '__main__':
+    main()
