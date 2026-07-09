@@ -738,10 +738,293 @@ function injectHTML(rawHtml) {
           background: rgba(14, 165, 233, 0.35);
           transform: scale(0.95);
       }
+      
+      /* Header styles */
+      #app-header {
+          position: fixed;
+          top: 0;
+          left: 0;
+          right: 0;
+          height: 50px;
+          background: rgba(15, 23, 42, 0.9);
+          backdrop-filter: blur(12px);
+          -webkit-backdrop-filter: blur(12px);
+          border-bottom: 1px solid rgba(14, 165, 233, 0.2);
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 0 16px;
+          z-index: 100000;
+          box-sizing: border-box;
+      }
+      .header-logo {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+      }
+      .logo-dot {
+          width: 8px;
+          height: 8px;
+          background: #10b981;
+          border-radius: 50%;
+          box-shadow: 0 0 8px #10b981;
+          animation: pulse 2s infinite;
+      }
+      .logo-title {
+          font-family: 'JetBrains Mono', monospace;
+          font-weight: 700;
+          color: #fff;
+          font-size: 16px;
+      }
+      .header-tabs {
+          display: flex;
+          gap: 4px;
+          background: rgba(2, 6, 23, 0.5);
+          padding: 4px;
+          border-radius: 8px;
+          border: 1px solid rgba(255, 255, 255, 0.08);
+      }
+      .tab-btn {
+          padding: 6px 12px;
+          font-size: 12px;
+          font-weight: 700;
+          color: #94a3b8;
+          border-radius: 6px;
+          cursor: pointer;
+          transition: all 0.2s;
+          user-select: none;
+          -webkit-user-select: none;
+          font-family: 'JetBrains Mono', monospace;
+      }
+      .tab-btn.active {
+          background: #0ea5e9;
+          color: #fff;
+      }
+      
+      /* Shift the main ttyd content down to not overlap with the header */
+      body > div:not(#app-header):not(#dashboard-container):not(#mobile-keyboard-bar) {
+          margin-top: 50px !important;
+          height: calc(100vh - 50px) !important;
+          box-sizing: border-box;
+      }
+      
+      /* Dashboard container */
+      #dashboard-container {
+          display: none;
+          position: fixed;
+          top: 50px;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background: #020617;
+          overflow-y: auto;
+          padding: 20px 16px;
+          box-sizing: border-box;
+          z-index: 99999;
+          color: #f8fafc;
+          font-family: system-ui, -apple-system, sans-serif;
+      }
+      body.show-dashboard #dashboard-container {
+          display: block;
+      }
+      body.show-dashboard > div:not(#app-header):not(#dashboard-container):not(#mobile-keyboard-bar) {
+          display: none !important;
+      }
+      body.show-dashboard #mobile-keyboard-bar {
+          display: none !important;
+      }
+
+      /* Dashboard Cards & Layout */
+      .dash-grid {
+          display: grid;
+          grid-template-columns: repeat(2, 1fr);
+          gap: 12px;
+          margin-bottom: 12px;
+      }
+      .dash-card {
+          background: rgba(15, 23, 42, 0.6);
+          border: 1px solid rgba(255, 255, 255, 0.08);
+          border-radius: 14px;
+          padding: 14px;
+          display: flex;
+          flex-direction: column;
+          justify-content: space-between;
+          box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+      }
+      .single-card {
+          margin-bottom: 20px;
+          flex-direction: row;
+          align-items: center;
+          justify-content: space-between;
+      }
+      .card-title {
+          font-size: 11px;
+          font-weight: 700;
+          color: #64748b;
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+      }
+      .card-value {
+          font-size: 22px;
+          font-weight: 700;
+          color: #fff;
+          margin: 6px 0 10px 0;
+          font-family: 'JetBrains Mono', monospace;
+      }
+      .card-value-large {
+          font-size: 18px;
+          font-weight: 700;
+          color: #38bdf8;
+          font-family: 'JetBrains Mono', monospace;
+      }
+      .progress-track {
+          background: rgba(255, 255, 255, 0.08);
+          height: 6px;
+          border-radius: 3px;
+          overflow: hidden;
+      }
+      .progress-bar {
+          background: linear-gradient(90deg, #0ea5e9, #38bdf8);
+          height: 100%;
+          width: 0%;
+          transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+      .temp-icon {
+          align-self: flex-end;
+          font-size: 20px;
+      }
+      .section-title {
+          font-size: 13px;
+          font-weight: 700;
+          color: #94a3b8;
+          margin: 20px 0 10px 0;
+          text-transform: uppercase;
+          letter-spacing: 0.08em;
+          border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+          padding-bottom: 6px;
+      }
+      .actions-grid {
+          display: grid;
+          grid-template-columns: repeat(2, 1fr);
+          gap: 10px;
+          margin-bottom: 20px;
+      }
+      .action-btn {
+          background: rgba(14, 165, 233, 0.08);
+          border: 1px solid rgba(14, 165, 233, 0.25);
+          color: #38bdf8;
+          padding: 14px 10px;
+          border-radius: 10px;
+          font-size: 13px;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.2s;
+          text-align: center;
+          display: block;
+          width: 100%;
+          box-sizing: border-box;
+      }
+      .action-btn:active {
+          background: rgba(14, 165, 233, 0.2);
+          transform: scale(0.96);
+      }
+      .custom-command-box {
+          display: flex;
+          gap: 8px;
+          margin-bottom: 30px;
+      }
+      .custom-command-box input {
+          flex: 1;
+          background: rgba(15, 23, 42, 0.8);
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          padding: 12px;
+          border-radius: 10px;
+          color: #fff;
+          font-family: 'JetBrains Mono', monospace;
+          font-size: 14px;
+      }
+      .custom-command-box input:focus {
+          outline: none;
+          border-color: #0ea5e9;
+          box-shadow: 0 0 0 2px rgba(14, 165, 233, 0.2);
+      }
+      .custom-command-box button {
+          background: #0ea5e9;
+          color: #fff;
+          border: none;
+          padding: 0 18px;
+          border-radius: 10px;
+          font-size: 14px;
+          font-weight: 700;
+          cursor: pointer;
+          transition: all 0.2s;
+      }
+      .custom-command-box button:active {
+          background: #0284c7;
+          transform: scale(0.95);
+      }
     </style>`;
 
     const pwaBody = `
+    <div id="app-header">
+      <div class="header-logo">
+        <span class="logo-dot"></span>
+        <span class="logo-title">terminalout</span>
+      </div>
+      <div class="header-tabs">
+        <div class="tab-btn active" id="tab-terminal">Terminal</div>
+        <div class="tab-btn" id="tab-dashboard">Dashboard</div>
+      </div>
+    </div>
     <button id="pwa-install-btn">📥 Instalar App</button>
+    <div id="dashboard-container">
+      <!-- Metrics Grid -->
+      <div class="dash-grid">
+        <div class="dash-card">
+          <div class="card-title">CPU</div>
+          <div class="card-value" id="stat-cpu">--%</div>
+          <div class="progress-track"><div class="progress-bar" id="bar-cpu" style="width: 0%"></div></div>
+        </div>
+        <div class="dash-card">
+          <div class="card-title">Memoria</div>
+          <div class="card-value" id="stat-mem">-- MB</div>
+          <div class="progress-track"><div class="progress-bar" id="bar-mem" style="width: 0%"></div></div>
+        </div>
+        <div class="dash-card">
+          <div class="card-title">Disco (/)</div>
+          <div class="card-value" id="stat-disk">-- GB</div>
+          <div class="progress-track"><div class="progress-bar" id="bar-disk" style="width: 0%"></div></div>
+        </div>
+        <div class="dash-card">
+          <div class="card-title">Temperatura</div>
+          <div class="card-value" id="stat-temp">--°C</div>
+          <div class="temp-icon">🔥</div>
+        </div>
+      </div>
+      
+      <div class="dash-card single-card">
+        <div class="card-title">Uptime</div>
+        <div class="card-value-large" id="stat-uptime">--:--:--</div>
+      </div>
+
+      <!-- Quick Actions -->
+      <h3 class="section-title">Comandos Rápidos</h3>
+      <div class="actions-grid">
+        <button class="action-btn" id="act-ls">📂 Listar Archivos (ls)</button>
+        <button class="action-btn" id="act-top">📊 Monitorear (top)</button>
+        <button class="action-btn" id="act-neofetch">💻 Info Sistema (neofetch)</button>
+        <button class="action-btn" id="act-df">💾 Espacio en Disco (df)</button>
+        <button class="action-btn" id="act-ip">🌐 Interfaces IP (ip a)</button>
+        <button class="action-btn" id="act-clear">🧹 Limpiar Consola</button>
+      </div>
+
+      <!-- Custom Command -->
+      <h3 class="section-title">Ejecutar Comando</h3>
+      <div class="custom-command-box">
+        <input type="text" id="cmd-input" placeholder="Escribe un comando... (e.g. ping -c 3 1.1.1.1)" />
+        <button id="btn-run-cmd">Enviar</button>
+      </div>
+    </div>
     <div id="mobile-keyboard-bar">
       <div class="terminal-key-btn special-btn" id="btn-ctrlc2">Ctrl+C x2</div>
       <div class="terminal-key-btn special-btn" id="btn-paste">📋 Pegar</div>
@@ -952,6 +1235,92 @@ function injectHTML(rawHtml) {
                 document.getElementById('btn-ctrl').classList.remove('active');
             }
         });
+
+        // --- Lógica del Dashboard y Navegación ---
+        const tabTerminal = document.getElementById('tab-terminal');
+        const tabDashboard = document.getElementById('tab-dashboard');
+        
+        function showTab(tabName) {
+            if (tabName === 'terminal') {
+                tabTerminal.classList.add('active');
+                tabDashboard.classList.remove('active');
+                document.body.classList.remove('show-dashboard');
+                setTimeout(() => {
+                    window.dispatchEvent(new Event('resize'));
+                }, 100);
+            } else {
+                tabTerminal.classList.remove('active');
+                tabDashboard.classList.add('active');
+                document.body.classList.add('show-dashboard');
+            }
+        }
+
+        tabTerminal.addEventListener('click', () => showTab('terminal'));
+        tabDashboard.addEventListener('click', () => showTab('dashboard'));
+
+        const runQuickCmd = (cmd) => {
+            send(cmd + '\n');
+            showTab('terminal');
+        };
+
+        const setupClick = (id, cmd) => {
+            const el = document.getElementById(id);
+            if (el) el.addEventListener('click', () => runQuickCmd(cmd));
+        };
+
+        setupClick('act-ls', 'ls -la');
+        setupClick('act-top', 'top');
+        setupClick('act-neofetch', 'neofetch');
+        setupClick('act-df', 'df -h');
+        setupClick('act-ip', 'ip a');
+        setupClick('act-clear', 'clear');
+
+        // Input de comando personalizado
+        const cmdInput = document.getElementById('cmd-input');
+        const runBtn = document.getElementById('btn-run-cmd');
+        if (runBtn && cmdInput) {
+            runBtn.addEventListener('click', () => {
+                const cmd = cmdInput.value.trim();
+                if (cmd) {
+                    runQuickCmd(cmd);
+                    cmdInput.value = '';
+                }
+            });
+            cmdInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    const cmd = cmdInput.value.trim();
+                    if (cmd) {
+                        runQuickCmd(cmd);
+                        cmdInput.value = '';
+                    }
+                }
+            });
+        }
+
+        // Obtener y actualizar métricas de sistema
+        async function updateStats() {
+            try {
+                const res = await fetch('/api/system-status');
+                if (res.status === 401) return; // Sesión expirada
+                const data = await res.json();
+                
+                document.getElementById('stat-cpu').textContent = data.cpu + '%';
+                document.getElementById('bar-cpu').style.width = data.cpu + '%';
+                
+                document.getElementById('stat-mem').textContent = data.mem.used + ' / ' + data.mem.total + ' MB';
+                document.getElementById('bar-mem').style.width = data.mem.percent + '%';
+                
+                document.getElementById('stat-disk').textContent = data.disk.used + ' / ' + data.disk.total;
+                document.getElementById('bar-disk').style.width = data.disk.percent + '%';
+                
+                document.getElementById('stat-temp').textContent = data.temp;
+                document.getElementById('stat-uptime').textContent = data.uptime;
+            } catch (e) {
+                console.error('Error fetching system stats:', e);
+            }
+        }
+        setInterval(updateStats, 2500);
+        updateStats();
       })();
     </script>
     `;
@@ -960,6 +1329,86 @@ function injectHTML(rawHtml) {
     html = html.replace('</head>', pwaMeta + '</head>');
     html = html.replace('</body>', pwaBody + '</body>');
     return html;
+}
+
+// ─────────── System Info Helpers ───────────
+let lastCpuTime = { idle: 0, total: 0 };
+function getCpuUsage(callback) {
+    fs.readFile('/proc/stat', 'utf8', (err, data) => {
+        if (err) return callback(0);
+        const firstLine = data.split('\n')[0];
+        const parts = firstLine.split(/\s+/).slice(1).map(Number);
+        const idle = parts[3] + parts[4]; // idle + iowait
+        const total = parts.reduce((a, b) => a + b, 0);
+        
+        const diffIdle = idle - lastCpuTime.idle;
+        const diffTotal = total - lastCpuTime.total;
+        lastCpuTime = { idle, total };
+        
+        if (diffTotal === 0) return callback(0);
+        const usage = Math.round(100 * (1 - diffIdle / diffTotal));
+        callback(usage);
+    });
+}
+
+function getMemInfo(callback) {
+    fs.readFile('/proc/meminfo', 'utf8', (err, data) => {
+        if (err) return callback({ total: 0, used: 0, percent: 0 });
+        const lines = data.split('\n');
+        let total = 0, available = 0;
+        for (const line of lines) {
+            if (line.startsWith('MemTotal:')) {
+                total = parseInt(line.match(/\d+/)[0], 10);
+            } else if (line.startsWith('MemAvailable:')) {
+                available = parseInt(line.match(/\d+/)[0], 10);
+            }
+        }
+        const used = total - available;
+        const percent = total > 0 ? Math.round((used / total) * 100) : 0;
+        callback({
+            total: Math.round(total / 1024),
+            used: Math.round(used / 1024),
+            percent
+        });
+    });
+}
+
+function getSystemStatus(callback) {
+    getCpuUsage((cpu) => {
+        getMemInfo((mem) => {
+            exec("df -h / | tail -n 1", (err, stdout) => {
+                let disk = { total: 'N/A', used: 'N/A', percent: 0 };
+                if (!err && stdout) {
+                    const parts = stdout.trim().split(/\s+/);
+                    if (parts.length >= 5) {
+                        disk = {
+                            total: parts[1],
+                            used: parts[2],
+                            percent: parseInt(parts[4].replace('%', ''), 10)
+                        };
+                    }
+                }
+                exec("uptime -p", (errUptime, stdoutUptime) => {
+                    const uptime = errUptime ? 'N/A' : stdoutUptime.trim().replace(/^up /, '');
+                    let temp = 'N/A';
+                    try {
+                        if (fs.existsSync('/sys/class/thermal/thermal_zone0/temp')) {
+                            const tempMillidegrees = parseInt(fs.readFileSync('/sys/class/thermal/thermal_zone0/temp', 'utf8').trim(), 10);
+                            temp = Math.round(tempMillidegrees / 1000) + '°C';
+                        }
+                    } catch (e) {}
+                    
+                    callback({
+                        cpu,
+                        mem,
+                        disk,
+                        uptime,
+                        temp
+                    });
+                });
+            });
+        });
+    });
 }
 
 // ─────────── HTTP Request Handler ───────────
@@ -1083,6 +1532,15 @@ function handleRequest(req, res) {
         const last = getLatestScreenshot();
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ path: last || '' }));
+        return;
+    }
+
+    // ── Endpoint API: Obtener estado del sistema ──────────
+    if (path_ === '/api/system-status') {
+        getSystemStatus((status) => {
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify(status));
+        });
         return;
     }
 
