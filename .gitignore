@@ -3,3 +3,4 @@ session.json
 ssl/
 *.log
 *.pid
+node_modules/

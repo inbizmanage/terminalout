@@ -1050,6 +1050,90 @@ function injectHTML(rawHtml) {
           align-self: flex-end;
           font-size: 20px;
       }
+
+      /* Browser App Styles */
+      .browser-nav-bar {
+          display: flex;
+          gap: 6px;
+          background: rgba(15, 23, 42, 0.9);
+          padding: 8px;
+          border-radius: 10px;
+          margin-bottom: 10px;
+          align-items: center;
+      }
+      .browser-nav-btn {
+          background: rgba(255, 255, 255, 0.08);
+          border: 1px solid rgba(255, 255, 255, 0.12);
+          color: #fff;
+          width: 36px;
+          height: 36px;
+          border-radius: 8px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 14px;
+          cursor: pointer;
+          flex-shrink: 0;
+      }
+      .browser-nav-btn:active {
+          background: rgba(255, 255, 255, 0.18);
+          transform: scale(0.95);
+      }
+      #browser-url-input {
+          flex: 1;
+          background: rgba(15, 23, 42, 0.8);
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          padding: 8px 12px;
+          border-radius: 8px;
+          color: #fff;
+          font-size: 13px;
+          font-family: 'JetBrains Mono', monospace;
+      }
+      #browser-url-input:focus {
+          outline: none;
+          border-color: #0ea5e9;
+      }
+      .browser-viewport-container {
+          position: relative;
+          background: #000;
+          border-radius: 12px;
+          overflow: hidden;
+          width: 100%;
+          max-width: 375px;
+          height: 550px;
+          margin: 0 auto;
+          box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+          border: 1px solid rgba(255,255,255,0.08);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+      }
+      #browser-screen {
+          width: 100%;
+          height: 100%;
+          object-fit: fill;
+          display: none;
+          cursor: pointer;
+          user-select: none;
+          -webkit-user-select: none;
+      }
+      .browser-overlay {
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background: rgba(15, 23, 42, 0.95);
+          color: #38bdf8;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-family: 'JetBrains Mono', monospace;
+          font-size: 14px;
+          z-index: 10;
+          text-align: center;
+          padding: 20px;
+      }
     </style>`;
 
     const pwaBody = `
@@ -1080,9 +1164,9 @@ function injectHTML(rawHtml) {
           <div class="app-icon monitor-icon">📊</div>
           <div class="app-name">Monitor</div>
         </div>
-        <div class="app-icon-wrap" id="app-gallery-btn">
-          <div class="app-icon gallery-icon">🖼️</div>
-          <div class="app-name">Capturas</div>
+        <div class="app-icon-wrap" id="app-browser-btn">
+          <div class="app-icon browser-icon">🌐</div>
+          <div class="app-name">Navegador</div>
         </div>
       </div>
     </div>
@@ -1149,19 +1233,18 @@ function injectHTML(rawHtml) {
       </div>
     </div>
 
-    <!-- Gallery App -->
-    <div id="gallery-app" class="app-screen">
-      <div class="app-toolbar">
-        <button class="tool-btn" id="gallery-back-btn">⬅️ Atrás</button>
-        <span>Capturas del Servidor</span>
+    <!-- Browser App -->
+    <div id="browser-app" class="app-screen">
+      <div class="browser-nav-bar">
+        <button class="browser-nav-btn" id="btn-browser-home">🏠</button>
+        <button class="browser-nav-btn" id="btn-browser-back">⬅️</button>
+        <button class="browser-nav-btn" id="btn-browser-reload">🔄</button>
+        <input type="text" id="browser-url-input" placeholder="Ingresa URL o busca..." />
+        <button class="browser-nav-btn" id="btn-browser-go">Ir</button>
       </div>
-      <div style="background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.05);border-radius:12px;padding:16px;text-align:center;">
-        <h4 style="margin:0 0 12px 0;font-size:14px;color:#94a3b8;">Última Captura Reciente:</h4>
-        <div style="background:rgba(0,0,0,0.2);border-radius:8px;padding:8px;min-height:150px;display:flex;align-items:center;justify-content:center;">
-          <img id="gallery-img-preview" src="" alt="Vista previa" style="max-width:100%;max-height:350px;display:none;border-radius:6px;box-shadow:0 4px 12px rgba(0,0,0,0.5);" />
-          <div id="gallery-no-img" style="color:#64748b;font-size:12px;">Cargando captura...</div>
-        </div>
-        <button class="action-btn" id="btn-refresh-gallery" style="background:rgba(14,165,233,0.15);border:1px solid rgba(14,165,233,0.3);color:#38bdf8;padding:8px 16px;border-radius:8px;font-size:12px;margin-top:12px;cursor:pointer;">🔄 Actualizar</button>
+      <div class="browser-viewport-container">
+        <div id="browser-loading" class="browser-overlay">Iniciando Navegador...</div>
+        <img id="browser-screen" src="" alt="Pantalla" />
       </div>
     </div>
 
@@ -1382,12 +1465,13 @@ function injectHTML(rawHtml) {
         });
 
         // --- Lógica de LinuxMobile OS ---
-        const screens = ['home-screen', 'files-app', 'monitor-app', 'gallery-app'];
+        const screens = ['home-screen', 'files-app', 'monitor-app', 'browser-app'];
         
         function openApp(appName) {
             // Desactivar todas las pantallas personalizadas
             screens.forEach(s => {
-                document.getElementById(s).classList.remove('active');
+                const el = document.getElementById(s);
+                if (el) el.classList.remove('active');
             });
             
             if (appName === 'terminal') {
@@ -1413,10 +1497,10 @@ function injectHTML(rawHtml) {
                     document.getElementById('monitor-app').classList.add('active');
                     document.getElementById('header-app-title').textContent = 'Monitor';
                     loadProcesses();
-                } else if (appName === 'gallery') {
-                    document.getElementById('gallery-app').classList.add('active');
-                    document.getElementById('header-app-title').textContent = 'Capturas';
-                    loadGallery();
+                } else if (appName === 'browser') {
+                    document.getElementById('browser-app').classList.add('active');
+                    document.getElementById('header-app-title').textContent = 'Navegador';
+                    initBrowser();
                 }
             }
         }
@@ -1424,11 +1508,10 @@ function injectHTML(rawHtml) {
         document.getElementById('app-terminal-btn').addEventListener('click', () => openApp('terminal'));
         document.getElementById('app-files-btn').addEventListener('click', () => openApp('files'));
         document.getElementById('app-monitor-btn').addEventListener('click', () => openApp('monitor'));
-        document.getElementById('app-gallery-btn').addEventListener('click', () => openApp('gallery'));
+        document.getElementById('app-browser-btn').addEventListener('click', () => openApp('browser'));
         document.getElementById('nav-home-btn').addEventListener('click', () => openApp('home'));
         document.getElementById('files-back-btn').addEventListener('click', () => openApp('home'));
         document.getElementById('monitor-back-btn').addEventListener('click', () => openApp('home'));
-        document.getElementById('gallery-back-btn').addEventListener('click', () => openApp('home'));
 
         // --- Lógica del Explorador de Archivos ---
         let currentDirectory = '/home/dxdx';
@@ -1530,30 +1613,170 @@ function injectHTML(rawHtml) {
             }
         }, 3000);
 
-        // --- Lógica de la Galería de Capturas ---
-        async function loadGallery() {
-            const img = document.getElementById('gallery-img-preview');
-            const noImg = document.getElementById('gallery-no-img');
-            img.style.display = 'none';
-            noImg.style.display = 'block';
-            noImg.textContent = 'Cargando captura...';
-            try {
-                const res = await fetch('/api/last-screenshot');
-                const data = await res.json();
-                if (data && data.path) {
-                    img.src = '/api/files/view?path=' + encodeURIComponent(data.path);
-                    img.onload = () => {
-                        img.style.display = 'block';
-                        noImg.style.display = 'none';
-                    };
-                } else {
-                    noImg.textContent = 'No se encontró ninguna captura reciente.';
+        // --- Lógica del Navegador Virtual (Brave App) ---
+        let browserWs = null;
+        const browserScreen = document.getElementById('browser-screen');
+        const browserLoading = document.getElementById('browser-loading');
+        const browserUrlInput = document.getElementById('browser-url-input');
+
+        function initBrowser() {
+            if (browserWs && browserWs.readyState === 1) return;
+            
+            browserLoading.style.display = 'flex';
+            browserLoading.textContent = 'Iniciando navegador...';
+            browserScreen.style.display = 'none';
+            
+            const wsProtocol = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
+            const wsUrl = wsProtocol + window.location.host + '/browser-stream';
+            
+            browserWs = new WebSocket(wsUrl);
+            
+            browserWs.onopen = () => {
+                console.log("Virtual browser stream open");
+                browserLoading.textContent = 'Cargando página...';
+                browserWs.send(JSON.stringify({ type: 'navigate', url: 'https://www.google.com' }));
+            };
+            
+            browserWs.onmessage = (event) => {
+                const msg = JSON.parse(event.data);
+                if (msg.type === 'frame') {
+                    browserScreen.src = 'data:image/jpeg;base64,' + msg.data;
+                    browserScreen.style.display = 'block';
+                    browserLoading.style.display = 'none';
                 }
-            } catch (e) {
-                noImg.textContent = 'Error al cargar la captura.';
+            };
+            
+            browserWs.onerror = (err) => {
+                console.error("Browser stream error:", err);
+                browserLoading.textContent = 'Error en la conexión del navegador.';
+            };
+            
+            browserWs.onclose = () => {
+                console.log("Browser stream closed");
+                browserLoading.style.display = 'flex';
+                browserLoading.textContent = 'Navegador desconectado. Reabriendo...';
+                setTimeout(initBrowser, 2000);
+            };
+        }
+
+        function sendMouseEvent(e, eventType) {
+            if (!browserWs || browserWs.readyState !== 1) return;
+            const rect = browserScreen.getBoundingClientRect();
+            const scaleX = 375 / rect.width;
+            const scaleY = 550 / rect.height;
+            
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            
+            const x = Math.round((clientX - rect.left) * scaleX);
+            const y = Math.round((clientY - rect.top) * scaleY);
+            
+            if (x >= 0 && x <= 375 && y >= 0 && y <= 550) {
+                browserWs.send(JSON.stringify({
+                    type: 'touch',
+                    eventType: eventType,
+                    x: x,
+                    y: y
+                }));
             }
         }
-        document.getElementById('btn-refresh-gallery').addEventListener('click', loadGallery);
+
+        browserScreen.addEventListener('mousedown', (e) => {
+            e.preventDefault();
+            sendMouseEvent(e, 'mousePressed');
+        });
+        browserScreen.addEventListener('mouseup', (e) => {
+            e.preventDefault();
+            sendMouseEvent(e, 'mouseReleased');
+        });
+        browserScreen.addEventListener('mousemove', (e) => {
+            if (e.buttons === 1) {
+                sendMouseEvent(e, 'mouseMoved');
+            }
+        });
+        
+        browserScreen.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            sendMouseEvent(e, 'mousePressed');
+        });
+        browserScreen.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            sendMouseEvent(e, 'mouseReleased');
+        });
+        browserScreen.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+            sendMouseEvent(e, 'mouseMoved');
+        });
+
+        document.getElementById('btn-browser-go').addEventListener('click', () => {
+            let urlVal = browserUrlInput.value.trim();
+            if (urlVal) {
+                if (!urlVal.startsWith('http://') && !urlVal.startsWith('https://')) {
+                    if (urlVal.includes('.') && !urlVal.includes(' ')) {
+                        urlVal = 'https://' + urlVal;
+                    } else {
+                        urlVal = 'https://www.google.com/search?q=' + encodeURIComponent(urlVal);
+                    }
+                }
+                if (browserWs && browserWs.readyState === 1) {
+                    browserWs.send(JSON.stringify({ type: 'navigate', url: urlVal }));
+                }
+            }
+        });
+        
+        browserUrlInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                document.getElementById('btn-browser-go').click();
+            }
+        });
+        
+        document.getElementById('btn-browser-back').addEventListener('click', () => {
+            if (browserWs && browserWs.readyState === 1) {
+                browserWs.send(JSON.stringify({ type: 'goBack' }));
+            }
+        });
+        
+        document.getElementById('btn-browser-reload').addEventListener('click', () => {
+            if (browserWs && browserWs.readyState === 1) {
+                browserWs.send(JSON.stringify({ type: 'reload' }));
+            }
+        });
+        
+        document.getElementById('btn-browser-home').addEventListener('click', () => {
+            if (browserWs && browserWs.readyState === 1) {
+                browserWs.send(JSON.stringify({ type: 'navigate', url: 'https://www.google.com' }));
+            }
+        });
+
+        // Enviar teclas físicas y virtuales al navegador
+        window.addEventListener('keydown', (e) => {
+            const browserApp = document.getElementById('browser-app');
+            if (browserApp && browserApp.classList.contains('active') && document.activeElement !== browserUrlInput) {
+                if (browserWs && browserWs.readyState === 1) {
+                    browserWs.send(JSON.stringify({
+                        type: 'key',
+                        eventType: 'keyDown',
+                        key: e.key,
+                        keyCode: e.keyCode,
+                        text: e.key.length === 1 ? e.key : ''
+                    }));
+                }
+            }
+        });
+        window.addEventListener('keyup', (e) => {
+            const browserApp = document.getElementById('browser-app');
+            if (browserApp && browserApp.classList.contains('active') && document.activeElement !== browserUrlInput) {
+                if (browserWs && browserWs.readyState === 1) {
+                    browserWs.send(JSON.stringify({
+                        type: 'key',
+                        eventType: 'keyUp',
+                        key: e.key,
+                        keyCode: e.keyCode,
+                        text: e.key.length === 1 ? e.key : ''
+                    }));
+                }
+            }
+        });
 
         // --- Actualizar Reloj del Header ---
         function updateClock() {
@@ -1566,7 +1789,7 @@ function injectHTML(rawHtml) {
         updateClock();
 
         // --- Detener propagación de clics y toques para evitar problemas con ttyd/xterm ---
-        const customElements = ['app-header', 'app-nav-bar', 'home-screen', 'files-app', 'monitor-app', 'gallery-app'];
+        const customElements = ['app-header', 'app-nav-bar', 'home-screen', 'files-app', 'monitor-app', 'browser-app'];
         customElements.forEach(id => {
             const el = document.getElementById(id);
             if (el) {
@@ -1971,14 +2194,163 @@ if (useSsl && certPath && keyPath) {
     server = http.createServer(handleRequest);
 }
 
-// ─────────── WebSocket Proxy (solo si hay sesión) ───────────
+// ─────────── Brave Browser Lifecycle ───────────
+let braveProcess = null;
+function startBraveProcess() {
+    exec('fuser -k 9222/tcp', () => {
+        const { spawn } = require('child_process');
+        const profileDir = path.join(__dirname, 'brave-profile');
+        braveProcess = spawn('brave-browser', [
+            '--headless',
+            '--remote-debugging-port=9222',
+            '--disable-gpu',
+            '--no-sandbox',
+            `--user-data-dir=${profileDir}`,
+            '--window-size=375,550'
+        ]);
+        braveProcess.on('error', (err) => {
+            console.error("Failed to start Brave:", err);
+        });
+        console.log("Launched headless Brave browser on port 9222");
+    });
+}
+
+function cleanupAndExit() {
+    if (braveProcess) {
+        try { braveProcess.kill(); } catch(e) {}
+    }
+    process.exit();
+}
+process.on('SIGINT', cleanupAndExit);
+process.on('SIGTERM', cleanupAndExit);
+
+// ─────────── WebSocket Server for Brave Stream ───────────
+const { WebSocketServer } = require('ws');
+const wssBrowser = new WebSocketServer({ noServer: true });
+
+wssBrowser.on('connection', (clientWs) => {
+    console.log("Client connected to browser stream");
+    
+    const httpLib = require('http');
+    httpLib.get('http://127.0.0.1:9222/json/list', (res) => {
+        let rawData = '';
+        res.on('data', (chunk) => rawData += chunk);
+        res.on('end', () => {
+            try {
+                const list = JSON.parse(rawData);
+                const page = list.find(p => p.type === 'page') || list[0];
+                if (!page || !page.webSocketDebuggerUrl) {
+                    console.error("No debuggable page found in Brave");
+                    clientWs.close();
+                    return;
+                }
+                
+                const WebSocket = require('ws');
+                const cdpWs = new WebSocket(page.webSocketDebuggerUrl);
+                
+                cdpWs.on('open', () => {
+                    cdpWs.send(JSON.stringify({ id: 1, method: 'Page.enable' }));
+                    cdpWs.send(JSON.stringify({
+                        id: 2,
+                        method: 'Page.startScreencast',
+                        params: { format: 'jpeg', quality: 50, maxWidth: 375, maxHeight: 550, everyNthFrame: 1 }
+                    }));
+                });
+                
+                cdpWs.on('message', (message) => {
+                    try {
+                        const msg = JSON.parse(message);
+                        if (msg.method === 'Page.screencastFrame') {
+                            clientWs.send(JSON.stringify({
+                                type: 'frame',
+                                data: msg.params.data
+                            }));
+                            cdpWs.send(JSON.stringify({
+                                id: 3,
+                                method: 'Page.screencastFrameAck',
+                                params: { sessionId: msg.params.metadata.sessionId }
+                            }));
+                        }
+                    } catch (err) {}
+                });
+                
+                cdpWs.on('error', () => clientWs.close());
+                cdpWs.on('close', () => clientWs.close());
+                
+                clientWs.on('message', (data) => {
+                    try {
+                        const msg = JSON.parse(data);
+                        if (msg.type === 'touch') {
+                            cdpWs.send(JSON.stringify({
+                                id: 10,
+                                method: 'Input.dispatchMouseEvent',
+                                params: {
+                                    type: msg.eventType,
+                                    x: msg.x,
+                                    y: msg.y,
+                                    button: 'left',
+                                    clickCount: 1
+                                }
+                            }));
+                        } else if (msg.type === 'key') {
+                            cdpWs.send(JSON.stringify({
+                                id: 11,
+                                method: 'Input.dispatchKeyEvent',
+                                params: {
+                                    type: msg.eventType,
+                                    text: msg.text,
+                                    unmodifiedText: msg.text,
+                                    key: msg.key,
+                                    windowsVirtualKeyCode: msg.keyCode
+                                }
+                            }));
+                        } else if (msg.type === 'navigate') {
+                            cdpWs.send(JSON.stringify({
+                                id: 12,
+                                method: 'Page.navigate',
+                                params: { url: msg.url }
+                            }));
+                        } else if (msg.type === 'goBack') {
+                            cdpWs.send(JSON.stringify({
+                                id: 13,
+                                method: 'Runtime.evaluate',
+                                params: { expression: 'window.history.back()' }
+                            }));
+                        } else if (msg.type === 'reload') {
+                            cdpWs.send(JSON.stringify({
+                                id: 14,
+                                method: 'Page.reload',
+                                params: { ignoreCache: true }
+                            }));
+                        }
+                    } catch (err) {}
+                });
+                
+                clientWs.on('close', () => cdpWs.close());
+            } catch (err) {
+                clientWs.close();
+            }
+        });
+    }).on('error', () => {
+        clientWs.close();
+    });
+});
+
+// ─────────── WebSocket Proxy (con soporte para wssBrowser) ───────────
 server.on('upgrade', (req, socket, head) => {
-    // Verificar sesión en la cookie del upgrade
     const cookies = parseCookies(req);
     const token = cookies['tsession'];
     if (!isValidSession(token)) {
         socket.write('HTTP/1.1 401 Unauthorized\r\n\r\n');
         socket.destroy();
+        return;
+    }
+
+    const parsedUrl = url.parse(req.url);
+    if (parsedUrl.pathname === '/browser-stream') {
+        wssBrowser.handleUpgrade(req, socket, head, (ws) => {
+            wssBrowser.emit('connection', ws, req);
+        });
         return;
     }
 
@@ -2003,4 +2375,5 @@ server.on('upgrade', (req, socket, head) => {
 
 server.listen(port, '0.0.0.0', () => {
     console.log(`Proxy server listening on port ${port}`);
+    startBraveProcess();
 });
